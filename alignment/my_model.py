@@ -547,7 +547,7 @@ class BaseModel(object):
             outputs: of size [batch_size, time]
         """
         output_tuple = self.infer(sess)
-        attention_images = output_tuple.final_context_state
+        attention_images = output_tuple.align_score
         attention_images = attention_images.transpose([1, 2, 0])
 
         return attention_images

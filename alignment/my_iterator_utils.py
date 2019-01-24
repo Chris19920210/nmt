@@ -51,7 +51,6 @@ def get_infer_iterator(src_dataset,
         src_eos_id = vocab_utils.EOS_CHAR_ID
     else:
         src_eos_id = tf.cast(src_vocab_table.lookup(tf.constant(eos)), tf.int32)
-    #src_dataset = src_dataset.map(lambda src: tf.string_split([src]).values)
 
     tgt_sos_id = tf.cast(tgt_vocab_table.lookup(tf.constant(sos)), tf.int32)
     tgt_eos_id = tf.cast(tgt_vocab_table.lookup(tf.constant(eos)), tf.int32)

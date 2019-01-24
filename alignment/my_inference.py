@@ -31,7 +31,6 @@ __all__ = ["inference",
 
 def get_model_creator(hparams):
     """Get the right model class depending on configuration."""
-    #print('------->>>>>>>', hparams)
     if (hparams.encoder_type == "gnmt" or
             hparams.attention_architecture in ["gnmt", "gnmt_v2"]):
         model_creator = gnmt_model.GNMTModel

@@ -723,3 +723,4 @@ class Model(BaseModel):
         decoder_initial_state = encoder_state
 
         return cell, decoder_initial_state
+

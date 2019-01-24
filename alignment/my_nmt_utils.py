@@ -113,14 +113,6 @@ def decode_and_evaluate(name,
 
     start_time = time.time()
     num_sentences = 0
-    '''with codecs.getwriter("utf-8")(
-        tf.gfile.GFile(trans_file, mode="wb")) as trans_f:
-      trans_f.write("")  # Write empty string to ensure file is created.
-
-      if infer_mode == "greedy":
-        num_translations_per_input = 1
-      elif infer_mode == "beam_search":
-        num_translations_per_input = min(num_translations_per_input, beam_width)'''
 
     while True:
       try:

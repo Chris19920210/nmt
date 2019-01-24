@@ -137,6 +137,7 @@ class MyAttentionModel(my_model.Model):
             return tf.no_op()
         return _create_attention_images_summary(self.final_context_state)
 
+
 def create_attention_mechanism(attention_option, num_units, memory,
                                source_sequence_length, mode):
     """Create attention mechanism based on the attention_option."""

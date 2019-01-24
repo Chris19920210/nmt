@@ -22,7 +22,7 @@ from . import my_attention_model
 from nmt import gnmt_model
 from nmt import model_helper
 from nmt.utils import misc_utils as utils
-from nmt.utils import nmt_utils
+from . import my_nmt_utils
 from . import my_model_helper
 
 __all__ = ["inference",
@@ -31,6 +31,7 @@ __all__ = ["inference",
 
 def get_model_creator(hparams):
     """Get the right model class depending on configuration."""
+    #print('------->>>>>>>', hparams)
     if (hparams.encoder_type == "gnmt" or
             hparams.attention_architecture in ["gnmt", "gnmt_v2"]):
         model_creator = gnmt_model.GNMTModel
@@ -58,9 +59,9 @@ def inference(ckpt_path,
               inference_output_file,
               hparams,
               scope=None):
-
     model_creator = get_model_creator(hparams)
     infer_model = my_model_helper.create_infer_model(model_creator, hparams, scope)
+    print('===\n', infer_model.src_file_placeholder, infer_model.trg_file_placeholder)
     sess, loaded_infer_model = start_sess_and_load_model(infer_model, ckpt_path)
 
     single_worker_inference(
@@ -88,13 +89,13 @@ def single_worker_inference(sess,
             infer_model.iterator.initializer,
             feed_dict={
                 infer_model.src_file_placeholder: inference_src_file,
-                infer_model.tgt_file_placeholder: inference_trg_file,
+                infer_model.trg_file_placeholder: inference_trg_file,
                 infer_model.batch_size_placeholder: hparams.infer_batch_size
             })
         # Decode
         utils.print_out("# Start decoding")
 
-        nmt_utils.decode_and_evaluate(
+        my_nmt_utils.decode_and_evaluate(
             "infer",
             loaded_infer_model,
             sess,

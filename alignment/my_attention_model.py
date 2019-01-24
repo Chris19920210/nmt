@@ -17,6 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import collections
 import tensorflow as tf
 
 from nmt import model_helper
@@ -135,7 +136,6 @@ class MyAttentionModel(my_model.Model):
         if not self.has_attention or hparams.infer_mode == "beam_search":
             return tf.no_op()
         return _create_attention_images_summary(self.final_context_state)
-
 
 def create_attention_mechanism(attention_option, num_units, memory,
                                source_sequence_length, mode):

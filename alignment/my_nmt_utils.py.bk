@@ -27,73 +27,6 @@ from nmt.utils import misc_utils as utils
 __all__ = ["decode_and_evaluate", "get_translation"]
 
 
-def find_max_chain(arr, thres=0.25):
-  mlen, midx = 0, -1
-  j, k = 0, 0
-  while j < len(arr):
-    if arr[j] < thres:
-      j += 1
-      continue
-    k = j + 1
-    while k < len(arr):
-      if arr[k] < thres:
-        break
-      k += 1
-    clen = k - j
-    if clen > mlen:
-      mlen = clen
-      midx = j
-    elif clen == mlen and sum(arr[midx:midx+mlen]) < sum(arr[j:k]):
-      mlen = clen
-      midx = j
-    j = k + 1
-  return midx, mlen
-
-
-def get_alignment_from_scores(attention_images):
-  le, lz = attention_images[0].shape
-  if le <= 1:
-    pass
-  if lz <= 1:
-    pass
-  # from en to zh
-  enzh_dic = {}
-  for i in range(le):
-    if len(np.where(attention_images[0, i, :]<0.1)[0]) == 0:
-      continue
-    cur_sorted = np.sort(attention_images[0, i, :])
-    # if there are a max value that is much larger than others
-    if cur_sorted[-1] / cur_sorted[-2] > 2:
-      enzh_dic[i] = [np.argmax(attention_images[0, i, :])]
-      continue
-    # one to many case
-    midx, mlen = find_max_chain(attention_images[0, i, :])
-    if midx != -1:
-      enzh_dic[i] = [k for k in range(midx, mlen + midx)]
-  print('from en to zh: ', enzh_dic)
-  zhen_dic = {}
-  for i in range(lz):
-    if len(np.where(attention_images[0, :, i]<0.1)[0]) == 0:
-      continue
-    cur_sorted = np.sort(attention_images[0, :, i])
-    # if there are a max value that is much larger than others
-    if cur_sorted[-1] / cur_sorted[-2] > 2:
-      zhen_dic[i] = [np.argmax(attention_images[0, :, i])]
-      continue
-    # one to many case
-    midx, mlen = find_max_chain(attention_images[0, :, i])
-    if midx != -1:
-      zhen_dic[i] = [k for k in range(midx, mlen + midx)]
-  print('from zh to en: ', zhen_dic)
-  
-  # check out the alignment with bidirectional confirmation
-  for ken in sorted(enzh_dic.keys()):
-    zhs = enzh_dic[ken]
-    for kzh in zhs:
-      if kzh in zhen_dic and ken in zhen_dic[kzh]:
-        print(ken, '-', kzh)
-
-
 def decode_and_evaluate(name,
                         model,
                         sess,
@@ -141,7 +74,6 @@ def decode_and_evaluate(name,
           for idx in range(le):
             if attention_images[0, idx, i] > 0.1:
               print('\talign', i, tzhs[i], '->', idx, tens[idx], attention_images[0, idx, i])
-        get_alignment_from_scores(attention_images[:, :, :-1])
         '''if infer_mode != "beam_search":
           nmt_outputs = np.expand_dims(nmt_outputs, 0)
 
@@ -195,4 +127,3 @@ def get_translation(nmt_outputs, sent_id, tgt_eos, subword_option):
     translation = utils.format_text(output)
 
   return translation
-

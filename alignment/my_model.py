@@ -24,7 +24,7 @@ import collections
 import tensorflow as tf
 
 from nmt import model_helper
-from nmt.utils import iterator_utils
+from . import my_iterator_utils
 from nmt.utils import misc_utils as utils
 
 utils.check_tensorflow_version()
@@ -106,7 +106,7 @@ class BaseModel(object):
                                 scope,
                                 extra_args=None):
         """Set various params for self and initialize."""
-        assert isinstance(iterator, iterator_utils.BatchedInput)
+        assert isinstance(iterator, my_iterator_utils.BatchedInput)
         self.iterator = iterator
         self.mode = mode
         self.src_vocab_table = source_vocab_table

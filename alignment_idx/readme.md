@@ -4,7 +4,12 @@ remove iterator / vocab / input files
 add placeholder of index matrices
 
 # demo
-Invoke demo is in L56 alignment_idx/my_inference,py
+L56 alignment_idx/my_inference,py
+```
+def inference(ckpt_path,
+              hparams,
+              scope=None):
+```
 
 # placeholders
 ```

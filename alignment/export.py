@@ -108,7 +108,7 @@ class Exporter(object):
                         config=tf.ConfigProto(allow_soft_placement=True)) as sess:
             inference_inputs = infer_model.graph.get_tensor_by_name('src_placeholder:0')
             inference_targets = infer_model.graph.get_tensor_by_name('tgt_placeholder:0')
-            batch_size = infer_model.graph.get_tensor_by_name('batch_size:0')
+            batch_size = infer_model.graph.get_tensor_by_name('batch_size_placeholder:0')
 
             saver = infer_model.model.saver
             saver.restore(sess, self._ckpt_path)

@@ -107,7 +107,7 @@ def serving_create_infer_model(model_creator, hparams, scope=None, extra_args=No
 
         src_placeholder = tf.placeholder(shape=[None, None], dtype=tf.string, name="src_placeholder")
         tgt_placeholder = tf.placeholder(shape=[None, None], dtype=tf.string, name="trg_placeholder")
-        batch_size_placeholder = tf.placeholder(shape=[], dtype=tf.int64, name="batch_size")
+        batch_size_placeholder = tf.placeholder(shape=[], dtype=tf.int64, name="batch_size_placeholder")
 
         iterator = preprocess(
             src_placeholder,

@@ -70,11 +70,11 @@ class ExtraArgs(collections.namedtuple(
 
 
 def preprocess(src_placeholder,
-                tgt_placeholder,
-                src_vocab_table,
-                tgt_vocab_table,
-                batch_size_placeholder,
-                hparams):
+               tgt_placeholder,
+               src_vocab_table,
+               tgt_vocab_table,
+               batch_size_placeholder,
+               hparams):
 
     src_dataset = tf.data.Dataset.from_tensor_slices(src_placeholder)
     tgt_dataset = tf.data.Dataset.from_tensor_slices(tgt_placeholder)

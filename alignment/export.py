@@ -118,7 +118,7 @@ class Exporter(object):
 
             inference_signature = tf.saved_model.signature_def_utils.predict_signature_def(
                 inputs={
-                    'inputs': inference_inputs,
+                    'sources': inference_inputs,
                     'targets': inference_targets,
                     'batch_size': batch_size
                 },

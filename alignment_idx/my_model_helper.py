@@ -93,61 +93,12 @@ def preprocess(src_placeholder,
     return iterator
 
 
-def serving_create_infer_model(model_creator, hparams, scope=None, extra_args=None):
-    """Create inference model."""
-    graph = tf.Graph()
-    src_vocab_file = hparams.src_vocab_file
-    tgt_vocab_file = hparams.tgt_vocab_file
-
-    with graph.as_default(), tf.container(scope or "infer"):
-        src_vocab_table, tgt_vocab_table = vocab_utils.create_vocab_tables(
-            src_vocab_file, tgt_vocab_file, hparams.share_vocab)
-        reverse_tgt_vocab_table = lookup_ops.index_to_string_table_from_file(
-            tgt_vocab_file, default_value=vocab_utils.UNK)
-
-        src_placeholder = tf.placeholder(shape=[None, None], dtype=tf.string, name="src_placeholder")
-        tgt_placeholder = tf.placeholder(shape=[None, None], dtype=tf.string, name="trg_placeholder")
-        batch_size_placeholder = tf.placeholder(shape=[], dtype=tf.int64, name="batch_size_placeholder")
-
-        iterator = preprocess(
-            src_placeholder,
-            tgt_placeholder,
-            src_vocab_table,
-            tgt_vocab_table,
-            batch_size_placeholder,
-            hparams)
-
-        model = model_creator(
-            hparams,
-            iterator=iterator,
-            mode=tf.contrib.learn.ModeKeys.INFER,
-            source_vocab_table=src_vocab_table,
-            target_vocab_table=tgt_vocab_table,
-            reverse_target_vocab_table=reverse_tgt_vocab_table,
-            scope=scope,
-            extra_args=extra_args)
-
-    return InferModel(
-        graph=graph,
-        model=model,
-        src_file_placeholder=None,
-        trg_file_placeholder=None,
-        batch_size_placeholder=batch_size_placeholder,
-        iterator=iterator)
-
-
 class InferModel(
     collections.namedtuple("InferModel",
                            ("graph",
                             "model",
                             "src_index_placeholder",
                             "trg_index_placeholder",
-                            "src_seqlen_placeholder",
-                            "trg_seqlen_placeholder",
-                            # "src_file_placeholder",
-                            # "trg_file_placeholder",
-                            "batch_size_placeholder",
-                            # "iterator"
                             ))):
     pass
 
@@ -155,46 +106,17 @@ class InferModel(
 def create_infer_model(model_creator, hparams, scope=None, extra_args=None):
     """Create inference model."""
     """Create train graph, model, src/tgt file holders, and iterator."""
-    # src_vocab_file = hparams.src_vocab_file
-    # tgt_vocab_file = hparams.tgt_vocab_file
     graph = tf.Graph()
 
     with graph.as_default(), tf.container(scope or "infer"):
-        '''src_vocab_table, tgt_vocab_table = vocab_utils.create_vocab_tables(
-            src_vocab_file, tgt_vocab_file, hparams.share_vocab)
-        reverse_tgt_vocab_table = lookup_ops.index_to_string_table_from_file(
-            tgt_vocab_file, default_value=vocab_utils.UNK)
 
-        src_file_placeholder = tf.placeholder(shape=(), dtype=tf.string)
-        tgt_file_placeholder = tf.placeholder(shape=(), dtype=tf.string)
-        src_dataset = tf.data.TextLineDataset(src_file_placeholder)
-        tgt_dataset = tf.data.TextLineDataset(tgt_file_placeholder)
-        batch_size_placeholder = tf.placeholder(shape=[], dtype=tf.int64)
-        iterator = my_iterator_utils.get_infer_iterator(
-            src_dataset,
-            tgt_dataset,
-            src_vocab_table,
-            tgt_vocab_table,
-            batch_size_placeholder,
-            sos=hparams.sos,
-            eos=hparams.eos,
-            src_max_len=hparams.src_max_len_infer,
-            tgt_max_len=hparams.tgt_max_len_infer,
-            use_char_encode=hparams.use_char_encode)'''
-        src_index_placeholder = tf.placeholder(shape=[None, None], dtype=tf.int32)
-        trg_index_placeholder = tf.placeholder(shape=[None, None], dtype=tf.int32)
-        src_seqlen_placeholder = tf.placeholder(shape=[None], dtype=tf.int32)
-        trg_seqlen_placeholder = tf.placeholder(shape=[None], dtype=tf.int32)
-        holders = [src_index_placeholder, trg_index_placeholder, src_seqlen_placeholder, trg_seqlen_placeholder]
-        batch_size_placeholder = tf.placeholder(shape=[], dtype=tf.int64)
+        src_index_placeholder = tf.placeholder(shape=[None, None], dtype=tf.int32, name="src_placeholder")
+        trg_index_placeholder = tf.placeholder(shape=[None, None], dtype=tf.int32, name="trg_placeholder")
+        holders = [src_index_placeholder, trg_index_placeholder]
         model = model_creator(
             hparams,
-            # iterator=iterator,
             mode=tf.contrib.learn.ModeKeys.INFER,
             holders=holders,
-            # source_vocab_table=src_vocab_table,
-            # target_vocab_table=tgt_vocab_table,
-            # reverse_target_vocab_table=reverse_tgt_vocab_table,
             scope=scope,
             extra_args=extra_args)
 
@@ -202,14 +124,7 @@ def create_infer_model(model_creator, hparams, scope=None, extra_args=None):
         graph=graph,
         model=model,
         src_index_placeholder=src_index_placeholder,
-        trg_index_placeholder=trg_index_placeholder,
-        src_seqlen_placeholder=src_seqlen_placeholder,
-        trg_seqlen_placeholder=trg_seqlen_placeholder,
-        batch_size_placeholder=batch_size_placeholder,
-        # src_file_placeholder=src_file_placeholder,
-        # trg_file_placeholder=tgt_file_placeholder,
-        # batch_size_placeholder=batch_size_placeholder,
-        # iterator=iterator
+        trg_index_placeholder=trg_index_placeholder
         )
 
 

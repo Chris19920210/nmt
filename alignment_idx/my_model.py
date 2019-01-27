@@ -84,8 +84,8 @@ class BaseModel(object):
         if holders:
             self.source = holders[0]
             self.target_input = holders[1]
-            self.source_sequence_length = holders[2]
-            self.target_sequence_length = holders[3]
+            self.source_sequence_length = tf.squeeze(tf.map_fn(tf.size, self.source))
+            self.target_sequence_length = tf.squeeze(tf.map_fn(tf.size, self.target_input))
         else:
             #self.source = tf.constant(np.array([[  628], [    0], [ 3879], [ 6554], [21331], [   32], [ 1833], [  921], [   25], [    7], [16241], [   11], [ 5943], [  694], [    6]]), dtype=tf.int32)
             #self.target_input = tf.constant(np.array([[    1], [  338], [    0], [13489], [  102], [   57], [11677], [19601], [  577], [    8]]), dtype=tf.int32)

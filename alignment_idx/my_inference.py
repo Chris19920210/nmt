@@ -54,32 +54,22 @@ def start_sess_and_load_model(infer_model, ckpt_path):
 
 
 def inference(ckpt_path,
-            #   inference_src_file,
-            #   inference_trg_file,
-            #   inference_output_file,
               hparams,
               scope=None):
     model_creator = get_model_creator(hparams)
     infer_model = my_model_helper.create_infer_model(model_creator, hparams, scope)
-    # print('===\n', infer_model.src_file_placeholder, infer_model.trg_file_placeholder)
     sess, loaded_infer_model = start_sess_and_load_model(infer_model, ckpt_path)
 
     single_worker_inference(
         sess,
         infer_model,
         loaded_infer_model,
-        # inference_src_file,
-        # inference_trg_file,
-        # inference_output_file,
         hparams)
 
 
 def single_worker_inference(sess,
                             infer_model,
                             loaded_infer_model,
-                            # inference_src_file,
-                            # inference_trg_file,
-                            # inference_output_file,
                             hparams):
     """Inference with a single worker."""
     # output_infer = inference_output_file
@@ -104,7 +94,6 @@ def single_worker_inference(sess,
             infer_model.trg_index_placeholder: target_input,
             infer_model.src_seqlen_placeholder: source_sequence_length,
             infer_model.trg_seqlen_placeholder: target_sequence_length,
-            infer_model.batch_size_placeholder: hparams.infer_batch_size
         }
 
         my_nmt_utils.decode_and_evaluate(

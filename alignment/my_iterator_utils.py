@@ -22,7 +22,7 @@ import tensorflow as tf
 from nmt.utils import vocab_utils
 
 
-__all__ = ["BatchedInput", "get_infer_iterator"]
+__all__ = ["BatchedInput", "get_infer_iterator", "get_serving_infer_iterator"]
 EOS_ID = 2
 SOS_ID = 1
 UNK = 0

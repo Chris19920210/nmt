@@ -19,24 +19,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import base64
-from googleapiclient import discovery
 import grpc
 
 from tensor2tensor.data_generators import text_encoder
-from tensor2tensor.utils import cloud_mlengine as cloud
 import tensorflow as tf
 from tensorflow_serving.apis import predict_pb2
 from tensorflow_serving.apis import prediction_service_pb2_grpc
-
-
-def example_reading_spec():
-    data_fields = {
-        "sources": tf.VarLenFeature(tf.int64),
-        "targets": tf.VarLenFeature(tf.int64)
-    }
-    data_items_to_decoders = None
-    return (data_fields, data_items_to_decoders)
 
 
 def _make_example(src_ids,
@@ -109,5 +97,3 @@ def make_grpc_request_fn(servable_name, server, timeout_secs):
         return outputs
 
     return _make_grpc_request
-
-

@@ -177,14 +177,7 @@ class MyGNMTModel(my_attention_model.MyAttentionModel):
         else:
             memory = encoder_outputs
 
-        if (self.mode == tf.contrib.learn.ModeKeys.INFER and
-                infer_mode == "beam_search"):
-            memory, source_sequence_length, encoder_state, batch_size = (
-                self._prepare_beam_search_decoder_inputs(
-                    hparams.beam_width, memory, source_sequence_length,
-                    encoder_state))
-        else:
-            batch_size = self.batch_size
+        batch_size = self.batch_size
 
         attention_mechanism = self.attention_mechanism_fn(
             attention_option, num_units, memory, source_sequence_length, self.mode)

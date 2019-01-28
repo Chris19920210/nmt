@@ -71,59 +71,43 @@ class ExtraArgs(collections.namedtuple(
 
 def preprocess(src_placeholder,
                tgt_placeholder,
-               src_vocab_table,
-               tgt_vocab_table,
-               batch_size_placeholder,
+               batch_size,
                hparams):
 
     src_dataset = tf.data.Dataset.from_tensor_slices(src_placeholder)
     tgt_dataset = tf.data.Dataset.from_tensor_slices(tgt_placeholder)
 
-    iterator = my_iterator_utils.get_infer_iterator(
+    infer_batch = my_iterator_utils.get_serving_infer_iterator(
         src_dataset,
         tgt_dataset,
-        src_vocab_table,
-        tgt_vocab_table,
-        batch_size_placeholder,
-        sos=hparams.sos,
-        eos=hparams.eos,
+        batch_size,
         src_max_len=hparams.src_max_len_infer,
         tgt_max_len=hparams.tgt_max_len_infer,
         use_char_encode=hparams.use_char_encode)
-    return iterator
+    return infer_batch
 
 
-def serving_create_infer_model(model_creator, hparams, scope=None, extra_args=None):
+def create_serving_infer_model(model_creator, hparams, scope=None, extra_args=None):
     """Create inference model."""
     graph = tf.Graph()
-    src_vocab_file = hparams.src_vocab_file
-    tgt_vocab_file = hparams.tgt_vocab_file
 
     with graph.as_default(), tf.container(scope or "infer"):
-        src_vocab_table, tgt_vocab_table = vocab_utils.create_vocab_tables(
-            src_vocab_file, tgt_vocab_file, hparams.share_vocab)
-        reverse_tgt_vocab_table = lookup_ops.index_to_string_table_from_file(
-            tgt_vocab_file, default_value=vocab_utils.UNK)
 
-        src_placeholder = tf.placeholder(shape=[None, None], dtype=tf.string, name="src_placeholder")
-        tgt_placeholder = tf.placeholder(shape=[None, None], dtype=tf.string, name="trg_placeholder")
-        batch_size_placeholder = tf.placeholder(shape=[], dtype=tf.int64, name="batch_size_placeholder")
+        src_placeholder = tf.placeholder(shape=[None], dtype=tf.string, name="src_placeholder")
+        tgt_placeholder = tf.placeholder(shape=[None], dtype=tf.string, name="trg_placeholder")
 
-        iterator = preprocess(
+        batch_size = tf.shape(src_placeholder, out_type=tf.int64)[0]
+
+        infer_batch = preprocess(
             src_placeholder,
             tgt_placeholder,
-            src_vocab_table,
-            tgt_vocab_table,
-            batch_size_placeholder,
+            batch_size,
             hparams)
 
         model = model_creator(
             hparams,
-            iterator=iterator,
             mode=tf.contrib.learn.ModeKeys.INFER,
-            source_vocab_table=src_vocab_table,
-            target_vocab_table=tgt_vocab_table,
-            reverse_target_vocab_table=reverse_tgt_vocab_table,
+            iterator=infer_batch,
             scope=scope,
             extra_args=extra_args)
 
@@ -132,8 +116,8 @@ def serving_create_infer_model(model_creator, hparams, scope=None, extra_args=No
         model=model,
         src_file_placeholder=None,
         trg_file_placeholder=None,
-        batch_size_placeholder=batch_size_placeholder,
-        iterator=iterator)
+        batch_size_placeholder=batch_size,
+        iterator=infer_batch)
 
 
 class InferModel(

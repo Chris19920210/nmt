@@ -31,6 +31,9 @@ from nmt.utils import misc_utils as utils
 utils.check_tensorflow_version()
 
 __all__ = ["BaseModel", "Model"]
+SOS_ID = 1
+EOS_ID = 2
+UNK_ID = 0
 
 
 class TrainOutputTuple(collections.namedtuple(
@@ -84,6 +87,7 @@ class BaseModel(object):
         if holders:
             self.source = holders[0]
             self.target_input = holders[1]
+            self.target_input = tf.map_fn(lambda x: tf.concat((tf.constant(1), x), 0), self.target_input)
             self.source_sequence_length = tf.squeeze(tf.map_fn(tf.size, self.source))
             self.target_sequence_length = tf.squeeze(tf.map_fn(tf.size, self.target_input))
         else:

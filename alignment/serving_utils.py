@@ -104,10 +104,6 @@ def make_grpc_request_fn(servable_name, server, timeout_secs):
             tf.contrib.util.make_tensor_proto(
                 [ex.SerializeToString() for ex in tgt_examples], shape=[len(tgt_examples)]))
 
-        batch_proto = tf.contrib.util.make_tensor_proto(len(src_examples), dtype=tf.int64)
-
-        request.inputs['batch_size'].CopyFrom(batch_proto)
-
         response = stub.Predict(request, timeout_secs)
         outputs = tf.make_ndarray(response.outputs["outputs"])
         return outputs
@@ -115,20 +111,3 @@ def make_grpc_request_fn(servable_name, server, timeout_secs):
     return _make_grpc_request
 
 
-def predict(inputs_list, problem, request_fn, input_encoder, output_decoder):
-    """Encodes inputs, makes request to deployed TF model, and decodes outputs."""
-    assert isinstance(inputs_list, list)
-    fname = "inputs" if problem.has_inputs else "targets"
-    input_ids_list = [
-        _encode(inputs, input_encoder, add_eos=problem.has_inputs)
-        for inputs in inputs_list
-    ]
-    examples = [_make_example(input_ids, problem, fname)
-                for input_ids in input_ids_list]
-    predictions = request_fn(examples)
-    outputs = [
-        (_decode(prediction["outputs"], output_decoder),
-         prediction["scores"])
-        for prediction in predictions
-    ]
-    return outputs

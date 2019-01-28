@@ -60,9 +60,6 @@ class BaseModel(object):
                  hparams,
                  mode,
                  iterator,
-                 source_vocab_table,
-                 target_vocab_table,
-                 reverse_target_vocab_table=None,
                  scope=None,
                  extra_args=None):
         """Create the model.
@@ -80,9 +77,7 @@ class BaseModel(object):
 
         """
         # Set params
-        self._set_params_initializer(hparams, mode, iterator,
-                                     source_vocab_table, target_vocab_table,
-                                     scope, extra_args)
+        self._set_params_initializer(hparams, mode, iterator, scope, extra_args)
 
         # Not used in general seq2seq models; when True, ignore decoder & training
         self.extract_encoder_layers = (hasattr(hparams, "extract_encoder_layers")
@@ -91,7 +86,7 @@ class BaseModel(object):
         # Train graph
         res = self.build_graph(hparams, scope=scope)
         if not self.extract_encoder_layers:
-            self._set_train_or_infer(res, reverse_target_vocab_table, hparams)
+            self._set_train_or_infer(res, hparams)
 
         # Saver
         self.saver = tf.train.Saver(
@@ -101,16 +96,14 @@ class BaseModel(object):
                                 hparams,
                                 mode,
                                 iterator,
-                                source_vocab_table,
-                                target_vocab_table,
                                 scope,
                                 extra_args=None):
         """Set various params for self and initialize."""
         assert isinstance(iterator, my_iterator_utils.BatchedInput)
         self.iterator = iterator
         self.mode = mode
-        self.src_vocab_table = source_vocab_table
-        self.tgt_vocab_table = target_vocab_table
+        # self.src_vocab_table = source_vocab_table
+        # self.tgt_vocab_table = target_vocab_table
 
         self.src_vocab_size = hparams.src_vocab_size
         self.tgt_vocab_size = hparams.tgt_vocab_size
@@ -165,7 +158,7 @@ class BaseModel(object):
             self.encoder_emb_lookup_fn = tf.nn.embedding_lookup
         self.init_embeddings(hparams, scope)
 
-    def _set_train_or_infer(self, res, reverse_target_vocab_table, hparams):
+    def _set_train_or_infer(self, res, hparams):
         """Set up training and inference."""
         if self.mode == tf.contrib.learn.ModeKeys.TRAIN:
             self.train_loss = res[1]
@@ -241,7 +234,7 @@ class BaseModel(object):
         if warmup_scheme == "t2t":
             # 0.01^(1/warmup_steps): we start with a lr, 100 times smaller
             warmup_factor = tf.exp(tf.log(0.01) / warmup_steps)
-            inv_decay = warmup_factor**(
+            inv_decay = warmup_factor ** (
                 tf.to_float(warmup_steps - self.global_step))
         else:
             raise ValueError("Unknown warmup scheme %s" % warmup_scheme)
@@ -309,7 +302,7 @@ class BaseModel(object):
                 src_embed_file=hparams.src_embed_file,
                 tgt_embed_file=hparams.tgt_embed_file,
                 use_char_encode=hparams.use_char_encode,
-                scope=scope,))
+                scope=scope, ))
 
     def _get_train_summary(self):
         """Get train summary."""
@@ -448,7 +441,6 @@ class BaseModel(object):
         """
         iterator = self.iterator
 
-
         ## Decoder.
         with tf.variable_scope("decoder") as decoder_scope:
             cell, decoder_initial_state = self._build_decoder_cell(
@@ -476,7 +468,7 @@ class BaseModel(object):
             my_decoder = tf.contrib.seq2seq.BasicDecoder(
                 cell,
                 helper,
-                decoder_initial_state,)
+                decoder_initial_state, )
             # Dynamic decoding
             outputs, final_context_state, _ = tf.contrib.seq2seq.dynamic_decode(
                 my_decoder,
@@ -574,6 +566,7 @@ class Model(BaseModel):
     This class implements a multi-layer recurrent neural network as encoder,
     and a multi-layer recurrent neural network decoder.
     """
+
     def _build_encoder_from_sequence(self, hparams, sequence, sequence_length):
         """Build an encoder from a sequence.
 
@@ -723,4 +716,3 @@ class Model(BaseModel):
         decoder_initial_state = encoder_state
 
         return cell, decoder_initial_state
-

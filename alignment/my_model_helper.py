@@ -94,7 +94,7 @@ def create_serving_infer_model(model_creator, hparams, scope=None, extra_args=No
     with graph.as_default(), tf.container(scope or "infer"):
 
         src_placeholder = tf.placeholder(shape=[None], dtype=tf.string, name="src_placeholder")
-        tgt_placeholder = tf.placeholder(shape=[None], dtype=tf.string, name="trg_placeholder")
+        tgt_placeholder = tf.placeholder(shape=[None], dtype=tf.string, name="tgt_placeholder")
 
         batch_size = tf.shape(src_placeholder, out_type=tf.int64)[0]
 

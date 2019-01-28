@@ -27,10 +27,8 @@ from tensorflow_serving.apis import predict_pb2
 from tensorflow_serving.apis import prediction_service_pb2_grpc
 
 
-def _make_example(src_ids,
-                  tgt_ids,
-                  src_feature_name="sources",
-                  tgt_feature_name="targets"):
+def _make_example(ids,
+                  feature_name="sources"):
     """Make a tf.train.Example for the problem.
 
     features[input_feature_name] = input_ids
@@ -38,25 +36,18 @@ def _make_example(src_ids,
     Also fills in any other required features with dummy values.
 
     Args:
-      src_ids: list<int>.
-      tgt_ids: list<int>.
-      src_feature_name: name of feature for src_ids.
+        ids: list<int>.
+        feature_name:
 
     Returns:
       tf.train.Example
     """
-    src_features = {
-        src_feature_name:
-            tf.train.Feature(int64_list=tf.train.Int64List(value=src_ids))
+    features = {
+        feature_name:
+            tf.train.Feature(int64_list=tf.train.Int64List(value=ids))
     }
 
-    tgt_features = {
-        tgt_feature_name:
-            tf.train.Feature(int64_list=tf.train.Int64List(value=tgt_ids))
-    }
-
-    return tf.train.Example(features=tf.train.Features(feature=tgt_features)), \
-        tf.train.Example(features=tf.train.Features(feature=src_features))
+    return tf.train.Example(features=tf.train.Features(feature=features))
 
 
 def _create_stub(server):
@@ -97,3 +88,27 @@ def make_grpc_request_fn(servable_name, server, timeout_secs):
         return outputs
 
     return _make_grpc_request
+
+
+def predict(src_list, tgt_list, request_fn, src_encoder, tgt_encoder):
+    """Encodes inputs, makes request to deployed TF model, and decodes outputs."""
+    assert isinstance(src_list, list)
+    assert isinstance(tgt_list, list)
+    src_ids_list = [
+        _encode(src, src_encoder, add_eos=False)
+        for src in src_list
+    ]
+    tgt_ids_list = [
+        _encode(tgt, tgt_encoder, add_eos=False)
+        for tgt in tgt_list
+    ]
+    src_examples = [_make_example(src_ids, "sources")
+                    for src_ids in src_ids_list]
+
+    tgt_examples = [_make_example(tgt_ids, "targets")
+                    for tgt_ids in tgt_ids_list]
+
+    predictions = request_fn(src_examples, tgt_examples)
+    outputs = [prediction["outputs"] for prediction in predictions]
+
+    return outputs

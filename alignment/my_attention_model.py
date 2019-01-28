@@ -123,7 +123,7 @@ class MyAttentionModel(my_model.Model):
 
         return cell, decoder_initial_state
 
-    def _get_alignment_history(self):
+    def get_alignment_history(self):
         return self.final_context_state.alignment_history.stack()
 
     def _get_infer_summary(self, hparams):

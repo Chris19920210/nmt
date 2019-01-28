@@ -22,6 +22,7 @@ import tensorflow as tf
 from . import my_attention_model
 from . import my_model_helper
 from nmt.utils import misc_utils
+from . import my_gnmt_model
 
 
 class Exporter(object):
@@ -94,8 +95,8 @@ class Exporter(object):
     def _create_infer_model(self):
         if self.hparams.attention_architecture == "standard":
             model_creator = my_attention_model.MyAttentionModel
-        # elif self.hparams.attention_architecture in ["gnmt", "gnmt_v2"]:
-        #   model_creator = gnmt_model.GNMTModel
+        elif self.hparams.attention_architecture in ["gnmt", "gnmt_v2"]:
+            model_creator = my_gnmt_model.MyGNMTModel
         else:
             raise ValueError("Unknown model architecture")
         model = my_model_helper.create_serving_infer_model(model_creator=model_creator,
@@ -113,7 +114,7 @@ class Exporter(object):
             saver.restore(sess, self._ckpt_path)
             sess.run(tf.tables_initializer())
             # note here. Do not use decode func of model.
-            attention_images = infer_model.model.final_context_state.alignment_history.stack()
+            attention_images = infer_model.model.get_alignment_history()
 
             inference_signature = tf.saved_model.signature_def_utils.predict_signature_def(
                 inputs={

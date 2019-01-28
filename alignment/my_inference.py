@@ -19,7 +19,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from . import my_attention_model
-from nmt import gnmt_model
+from . import my_gnmt_model
 from nmt import model_helper
 from nmt.utils import misc_utils as utils
 from . import my_nmt_utils
@@ -33,7 +33,7 @@ def get_model_creator(hparams):
     """Get the right model class depending on configuration."""
     if (hparams.encoder_type == "gnmt" or
             hparams.attention_architecture in ["gnmt", "gnmt_v2"]):
-        model_creator = gnmt_model.GNMTModel
+        model_creator = my_gnmt_model.MyGNMTModel
     elif hparams.attention_architecture == "standard":
         model_creator = my_attention_model.MyAttentionModel
     else:

@@ -515,7 +515,7 @@ class BaseModel(object):
         """
         pass
 
-    def _get_alignment_history(self):
+    def get_alignment_history(self):
 
         pass
 
@@ -525,7 +525,7 @@ class BaseModel(object):
 
     def infer(self, sess):
         assert self.mode == tf.contrib.learn.ModeKeys.INFER
-        output_tuple = InferOutputTuple(align_score=self._get_alignment_history())
+        output_tuple = InferOutputTuple(align_score=self.get_alignment_history())
         return sess.run(output_tuple)
 
     def decode(self, sess):

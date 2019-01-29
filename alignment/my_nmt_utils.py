@@ -98,6 +98,7 @@ def decode_and_evaluate(name,
                         model,
                         sess,
                         trans_file,
+                        feed_dict,
                         ref_file,
                         metrics,
                         subword_option,
@@ -114,9 +115,12 @@ def decode_and_evaluate(name,
     start_time = time.time()
     num_sentences = 0
 
-    while True:
+    attention_images = model.decode(sess, feed_dict)
+    get_alignment_from_scores(attention_images[:, :, :-1])
+
+    '''while True:
       try:
-        attention_images = model.decode(sess)
+        attention_images = model.decode(sess, feed_dict)
         print('yyyyyyyyyyyyy', attention_images.shape, attention_images)
         tens = 'Conclusion NAT2 M1 mutation genotype was likely associated with the susceptibility to stomach cancer .'.split(' ')
         tzhs = '结论 NAT2M1 基因型 可能 与 胃癌 易感性 有关 。 <end>'.split(' ')
@@ -134,7 +138,7 @@ def decode_and_evaluate(name,
             if attention_images[0, idx, i] > 0.1:
               print('\talign', i, tzhs[i], '->', idx, tens[idx], attention_images[0, idx, i])
         get_alignment_from_scores(attention_images[:, :, :-1])
-        '''if infer_mode != "beam_search":
+        if infer_mode != "beam_search":
           nmt_outputs = np.expand_dims(nmt_outputs, 0)
 
         batch_size = nmt_outputs.shape[1]
@@ -147,12 +151,12 @@ def decode_and_evaluate(name,
                 sent_id,
                 tgt_eos=tgt_eos,
                 subword_option=subword_option)
-            trans_f.write((translation + b"\n").decode("utf-8"))'''
+            trans_f.write((translation + b"\n").decode("utf-8"))
       except tf.errors.OutOfRangeError:
         utils.print_time(
             "  done, num sentences %d" %
             (num_sentences), start_time)
-        break
+        break'''
 
   # Evaluation
   '''evaluation_scores = {}

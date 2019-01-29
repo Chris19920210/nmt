@@ -523,12 +523,12 @@ class BaseModel(object):
         del hparams
         return tf.no_op()
 
-    def infer(self, sess):
+    def infer(self, sess, feed_dict):
         assert self.mode == tf.contrib.learn.ModeKeys.INFER
         output_tuple = InferOutputTuple(align_score=self.get_alignment_history())
-        return sess.run(output_tuple)
+        return sess.run(output_tuple, feed_dict=feed_dict)
 
-    def decode(self, sess):
+    def decode(self, sess, feed_dict):
         """Decode a batch.
 
         Args:
@@ -538,7 +538,7 @@ class BaseModel(object):
           A tuple consiting of outputs, infer_summary.
             outputs: of size [batch_size, time]
         """
-        output_tuple = self.infer(sess)
+        output_tuple = self.infer(sess, feed_dict)
         attention_images = output_tuple.align_score
         attention_images = attention_images.transpose([1, 2, 0])
 

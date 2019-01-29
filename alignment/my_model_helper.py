@@ -114,8 +114,8 @@ def create_serving_infer_model(model_creator, hparams, scope=None, extra_args=No
     return InferModel(
         graph=graph,
         model=model,
-        src_file_placeholder=None,
-        trg_file_placeholder=None,
+        src_file_placeholder=src_placeholder,
+        trg_file_placeholder=tgt_placeholder,
         batch_size_placeholder=batch_size,
         iterator=infer_batch)
 

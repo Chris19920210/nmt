@@ -214,4 +214,4 @@ def decode_example(serialized_example, field):
 
     [decoded] = decoder.decode(serialized_example, items=[field])
 
-    return decoded
+    return tf.to_int32(decoded)

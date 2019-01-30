@@ -48,13 +48,12 @@ class Exporter(object):
         self._model_dir = self.hparams.out_dir
         self._version_number = int(round(time.time()))
 
-
         # Decide a checkpoint path
         ckpt_path = self._get_ckpt_path(flags.ckpt_path)
         ckpt = tf.train.get_checkpoint_state(ckpt_path)
         self._ckpt_path = ckpt.model_checkpoint_path
 
-        #export path
+        # export path
         self._export_dir = os.path.join(ckpt_path, 'export', str(self._version_number))
 
         self._print_params()

@@ -109,6 +109,5 @@ def predict(src_list, tgt_list, request_fn, src_encoder, tgt_encoder):
                     for tgt_ids in tgt_ids_list]
 
     predictions = request_fn(src_examples, tgt_examples)
-    outputs = [prediction["outputs"] for prediction in predictions]
 
-    return outputs
+    return predictions

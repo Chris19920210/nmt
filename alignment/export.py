@@ -23,6 +23,8 @@ from . import my_attention_model
 from . import my_model_helper
 from nmt.utils import misc_utils
 from . import my_gnmt_model
+import json
+import argparse
 
 
 class Exporter(object):
@@ -44,30 +46,25 @@ class Exporter(object):
         """
         self.hparams = hparams
         self._model_dir = self.hparams.out_dir
-        v = flags.version_number
-        self._version_number = v if v else int(round(time.time() * 1000))
+        self._version_number = int(round(time.time()))
 
-        export_path = flags.export_path if flags.export_path else self.hparams.out_dir
-        self._export_dir = os.path.join(export_path, str(self._version_number))
 
         # Decide a checkpoint path
         ckpt_path = self._get_ckpt_path(flags.ckpt_path)
         ckpt = tf.train.get_checkpoint_state(ckpt_path)
         self._ckpt_path = ckpt.model_checkpoint_path
 
-        # A file contains sequences, used for initializing iterators.
-        # A good idea is to use test or dev files as infer_file
-        test_file = self.hparams.test_prefix + "." + self.hparams.src
-        self._infer_file = flags.infer_file if flags.infer_file else test_file
+        #export path
+        self._export_dir = os.path.join(ckpt_path, 'export', str(self._version_number))
 
         self._print_params()
 
     def _print_params(self):
         misc_utils.print_hparams(self.hparams)
+        print("Export path      : %s" % self._export_dir)
         print("Model directory  : %s" % self._model_dir)
         print("Checkpoint path  : %s" % self._ckpt_path)
         print("Export path      : %s" % self._export_dir)
-        print("Inference file   : %s" % self._infer_file)
         print("Version number   : %d" % self._version_number)
 
     def _get_ckpt_path(self, flags_ckpt_path):
@@ -106,7 +103,7 @@ class Exporter(object):
     def export(self):
         infer_model = self._create_infer_model()
         with tf.Session(graph=infer_model.graph,
-                        config=tf.ConfigProto(allow_soft_placement=True)) as sess:
+                        config=tf.ConfigProto(allow_soft_placement=True, device_count={'GPU': 1})) as sess:
             inference_inputs = infer_model.graph.get_tensor_by_name('src_placeholder:0')
             inference_targets = infer_model.graph.get_tensor_by_name('tgt_placeholder:0')
 
@@ -137,3 +134,18 @@ class Exporter(object):
                 clear_devices=True,
                 assets_collection=tf.get_collection(tf.GraphKeys.ASSET_FILEPATHS))
             builder.save(as_text=True)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='remover')
+    parser.add_argument('--ckpt-path', type=str, default="./",
+                        help='model dir (includes checkpoints and hparams file)')
+    args = parser.parse_args()
+
+    hparams = tf.contrib.training.HParams()
+    for k, v in json.load(open(os.path.join(args.ckpt_path, 'hparams'), 'r')).items():
+        hparams.add_hparam(k, v)
+
+    exporter = Exporter(hparams=hparams, flags=args)
+
+    exporter.export()

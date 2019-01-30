@@ -64,7 +64,6 @@ class Exporter(object):
         print("Export path      : %s" % self._export_dir)
         print("Model directory  : %s" % self._model_dir)
         print("Checkpoint path  : %s" % self._ckpt_path)
-        print("Export path      : %s" % self._export_dir)
         print("Version number   : %d" % self._version_number)
 
     def _get_ckpt_path(self, flags_ckpt_path):
@@ -111,7 +110,7 @@ class Exporter(object):
             saver.restore(sess, self._ckpt_path)
             sess.run(tf.tables_initializer())
             # note here. Do not use decode func of model.
-            attention_images = infer_model.model.get_alignment_history()
+            attention_images = tf.transpose(infer_model.model.get_alignment_history(), [1, 2, 0], name="alignment")
 
             inference_signature = tf.saved_model.signature_def_utils.predict_signature_def(
                 inputs={

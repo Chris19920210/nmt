@@ -44,3 +44,15 @@ source = np.reshape(source, (15)).tolist()
 target_input = np.reshape(target_input, (10)).tolist()
 
 src, tgt = make_examples(source, target_input, "sources", "targets")
+
+
+with tf.Session(graph=tf.Graph()) as sess:
+    tf.saved_model.loader.load(sess, ["serve"], "/home/chenrihan/nmt/export_align/1548834206")
+    graph = tf.get_default_graph()
+    src_placeholder = graph.get_tensor_by_name("src_placeholder:0")
+    tgt_placeholder = graph.get_tensor_by_name("tgt_placeholder:0")
+    model = graph.get_tensor_by_name("alignment:0")
+    a = sess.run(model, {src_placeholder: src, tgt_placeholder: tgt})
+    print(a)
+    print(type(a))
+    print(a.shape)

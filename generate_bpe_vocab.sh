@@ -1,5 +1,5 @@
 SUBWORD_DIR=/home/wudong/s2s/dipml
-OUTPUT_DIR=/home/wudong/s2s/dipml/translated_align
+OUTPUT_DIR=/home/wudong/s2s/dipml/translated_align_spm
 # Learn Shared BPE
 for merge_ops in 50000; do
   echo "Learning BPE with merge_ops=${merge_ops}. This may take a while..."

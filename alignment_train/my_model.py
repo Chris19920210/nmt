@@ -47,7 +47,7 @@ class EvalOutputTuple(collections.namedtuple(
 
 
 class InferOutputTuple(collections.namedtuple(
-    "InferOutputTuple", ("align_score","src_seqlen","trg_seqlen"))):
+    "InferOutputTuple", ("align_score",))):
     """To allow for flexibily in returing different outputs."""
     pass
 
@@ -102,11 +102,13 @@ class BaseModel(object):
         assert isinstance(iterator, my_iterator_utils.BatchedInput)
         self.iterator = iterator
         self.mode = mode
-        # self.src_vocab_table = source_vocab_table
+        #self.src_vocab_table = source_vocab_table
         # self.tgt_vocab_table = target_vocab_table
 
-        self.src_vocab_size = hparams.src_vocab_size
-        self.tgt_vocab_size = hparams.tgt_vocab_size
+        #self.src_vocab_size = hparams.src_vocab_size
+        #self.tgt_vocab_size = hparams.tgt_vocab_size
+        self.src_vocab_size = 50000
+        self.tgt_vocab_size = 50000
         self.num_gpus = hparams.num_gpus
         self.time_major = hparams.time_major
 
@@ -297,8 +299,8 @@ class BaseModel(object):
                 tgt_embed_size=self.num_units,
                 num_enc_partitions=hparams.num_enc_emb_partitions,
                 num_dec_partitions=hparams.num_dec_emb_partitions,
-                src_vocab_file=hparams.src_vocab_file,
-                tgt_vocab_file=hparams.tgt_vocab_file,
+                #src_vocab_file=hparams.src_vocab_file,
+                #tgt_vocab_file=hparams.tgt_vocab_file,
                 src_embed_file=hparams.src_embed_file,
                 tgt_embed_file=hparams.tgt_embed_file,
                 use_char_encode=hparams.use_char_encode,
@@ -525,7 +527,7 @@ class BaseModel(object):
 
     def infer(self, sess, feed_dict):
         assert self.mode == tf.contrib.learn.ModeKeys.INFER
-        output_tuple = InferOutputTuple(align_score=self.get_alignment_history(), src_seqlen=self.iterator.source_sequence_length, trg_seqlen=self.iterator.target_sequence_length)
+        output_tuple = InferOutputTuple(align_score=self.get_alignment_history())
         return sess.run(output_tuple, feed_dict=feed_dict)
 
     def decode(self, sess, feed_dict):
@@ -542,7 +544,7 @@ class BaseModel(object):
         attention_images = output_tuple.align_score
         attention_images = attention_images.transpose([1, 2, 0])
 
-        return attention_images, output_tuple.src_seqlen, output_tuple.trg_seqlen
+        return attention_images
 
     def build_encoder_states(self, include_embeddings=False):
         """Stack encoder states and return tensor [batch, length, layer, size]."""

@@ -51,7 +51,7 @@ def find_max_chain(arr, thres=0.25):
 
 
 def get_alignment_from_scores(attention_images):
-  le, lz = attention_images.shape
+  le, lz = attention_images[0].shape
   if le <= 1:
     pass
   if lz <= 1:
@@ -59,29 +59,29 @@ def get_alignment_from_scores(attention_images):
   # from en to zh
   enzh_dic = {}
   for i in range(le):
-    if len(np.where(attention_images[i, :]<0.1)[0]) == 0:
+    if len(np.where(attention_images[0, i, :]<0.1)[0]) == 0:
       continue
-    cur_sorted = np.sort(attention_images[i, :])
+    cur_sorted = np.sort(attention_images[0, i, :])
     # if there are a max value that is much larger than others
     if cur_sorted[-1] / cur_sorted[-2] > 2:
-      enzh_dic[i] = [np.argmax(attention_images[i, :])]
+      enzh_dic[i] = [np.argmax(attention_images[0, i, :])]
       continue
     # one to many case
-    midx, mlen = find_max_chain(attention_images[i, :])
+    midx, mlen = find_max_chain(attention_images[0, i, :])
     if midx != -1:
       enzh_dic[i] = [k for k in range(midx, mlen + midx)]
   print('from en to zh: ', enzh_dic)
   zhen_dic = {}
   for i in range(lz):
-    if len(np.where(attention_images[:, i]<0.1)[0]) == 0:
+    if len(np.where(attention_images[0, :, i]<0.1)[0]) == 0:
       continue
-    cur_sorted = np.sort(attention_images[:, i])
+    cur_sorted = np.sort(attention_images[0, :, i])
     # if there are a max value that is much larger than others
     if cur_sorted[-1] / cur_sorted[-2] > 2:
-      zhen_dic[i] = [np.argmax(attention_images[:, i])]
+      zhen_dic[i] = [np.argmax(attention_images[0, :, i])]
       continue
     # one to many case
-    midx, mlen = find_max_chain(attention_images[:, i])
+    midx, mlen = find_max_chain(attention_images[0, :, i])
     if midx != -1:
       zhen_dic[i] = [k for k in range(midx, mlen + midx)]
   print('from zh to en: ', zhen_dic)
@@ -115,12 +115,8 @@ def decode_and_evaluate(name,
     start_time = time.time()
     num_sentences = 0
 
-    attention_images, src_seqlen, trg_seqlen = model.decode(sess, feed_dict)
-    print(attention_images.shape, attention_images, src_seqlen, trg_seqlen)
-    for i in range(len(attention_images)):
-        attention_image = attention_images[i, :src_seqlen[i], :trg_seqlen[i]]
-        #print('-----', attention_image.shape, attention_image)
-        get_alignment_from_scores(attention_image)
+    attention_images = model.decode(sess, feed_dict)
+    get_alignment_from_scores(attention_images[:, :, :-1])
 
     '''while True:
       try:

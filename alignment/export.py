@@ -47,14 +47,21 @@ class Exporter(object):
         self.hparams = hparams
         self._model_dir = self.hparams.out_dir
         self._version_number = int(round(time.time()))
+<<<<<<< HEAD
 
+=======
+>>>>>>> 3840fec5e76db7d2ce18dd61fb72aef8989cad9b
 
         # Decide a checkpoint path
         ckpt_path = self._get_ckpt_path(flags.ckpt_path)
         ckpt = tf.train.get_checkpoint_state(ckpt_path)
         self._ckpt_path = ckpt.model_checkpoint_path
 
+<<<<<<< HEAD
         #export path
+=======
+        # export path
+>>>>>>> 3840fec5e76db7d2ce18dd61fb72aef8989cad9b
         self._export_dir = os.path.join(ckpt_path, 'export', str(self._version_number))
 
         self._print_params()
@@ -64,7 +71,10 @@ class Exporter(object):
         print("Export path      : %s" % self._export_dir)
         print("Model directory  : %s" % self._model_dir)
         print("Checkpoint path  : %s" % self._ckpt_path)
+<<<<<<< HEAD
         print("Export path      : %s" % self._export_dir)
+=======
+>>>>>>> 3840fec5e76db7d2ce18dd61fb72aef8989cad9b
         print("Version number   : %d" % self._version_number)
 
     def _get_ckpt_path(self, flags_ckpt_path):
@@ -149,4 +159,7 @@ if __name__ == "__main__":
     exporter = Exporter(hparams=hparams, flags=args)
 
     exporter.export()
+<<<<<<< HEAD
 
+=======
+>>>>>>> 3840fec5e76db7d2ce18dd61fb72aef8989cad9b

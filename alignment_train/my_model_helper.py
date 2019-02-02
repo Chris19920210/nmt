@@ -613,6 +613,7 @@ class TrainModel(
                                           "skip_count_placeholder"))):
   pass
 
+
 def create_serving_train_model(
     model_creator, hparams, scope=None, num_workers=1, jobid=0,
     extra_args=None):

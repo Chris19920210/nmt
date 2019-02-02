@@ -215,10 +215,13 @@ if __name__ == '__main__':
     parser.add_argument('--tgt-file', type=str, default=None,
                         help='tgt')
 
+    src_file_placeholder = tf.placeholder(tf.string, shape=())
+    tgt_file_placeholder = tf.placeholder(tf.string, shape=())
+
     args = parser.parse_args()
 
-    src_dataset = tf.data.TFRecordDataset(args.src_file)
-    tgt_dataset = tf.data.TFRecordDataset(args.tgt_file)
+    src_dataset = tf.data.TFRecordDataset(src_file_placeholder)
+    tgt_dataset = tf.data.TFRecordDataset(tgt_file_placeholder)
 
     iterator = get_serving_iterator(
         src_dataset,
@@ -240,7 +243,9 @@ if __name__ == '__main__':
     g = tf.get_default_graph()
 
     with tf.Session(graph=g) as sess:
-        sess.run(iterator.initializer)
+
+        sess.run(iterator.initializer, feed_dict={src_file_placeholder: args.src_file,
+                                                  tgt_file_placeholder: args.tgt_file})
         for i in range(10):
             print("======================")
             print(sess.run(iterator.target_input))

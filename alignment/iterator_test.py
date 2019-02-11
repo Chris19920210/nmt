@@ -1,6 +1,7 @@
 import tensorflow as tf
 import collections
 import argparse
+from sentencepiece import SentencePieceProcessor as sp
 
 EOS_ID = 2
 SOS_ID = 1
@@ -214,6 +215,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--tgt-file', type=str, default=None,
                         help='tgt')
+    parser.add_argument('--src-model', type=str, default=None,
+                        help='src decoder')
+    parser.add_argument('--tgt-model', type=str, default=None,
+                        help='src decoder')
 
     src_file_placeholder = tf.placeholder(tf.string, shape=())
     tgt_file_placeholder = tf.placeholder(tf.string, shape=())
@@ -222,6 +227,12 @@ if __name__ == '__main__':
 
     src_dataset = tf.data.TFRecordDataset(src_file_placeholder)
     tgt_dataset = tf.data.TFRecordDataset(tgt_file_placeholder)
+
+    src_decoder = sp()
+    src_decoder.Load(filename=args.src_model)
+
+    tgt_decoder = sp()
+    tgt_decoder.Load(filename=args.tgt_model)
 
     iterator = get_serving_iterator(
         src_dataset,
@@ -249,6 +260,12 @@ if __name__ == '__main__':
         for i in range(10):
             print("======================")
             a, b, c = sess.run([iterator.target_input, iterator.target_output, iterator.source])
-            print(a)
-            print(b)
-            print(c)
+            print_format = """
+            source: {source: s}
+            target_in: {target_in:s}
+            target_out: {target_out:s}
+            """
+            for target_in, target_out, source in zip(a, b, c):
+                print(src_decoder.DecodeIds(source.tolist()))
+                print(tgt_decoder.DecodeIds(target_in.tolist()))
+                print(tgt_decoder.DecodeIds(target_out.tolist()))

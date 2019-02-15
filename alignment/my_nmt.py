@@ -472,7 +472,7 @@ def extend_hparams(hparams):
     utils.print_out("For language modeling, we turn off attention and "
                     "pass_hidden_state; turn on share_vocab; set src to tgt.")
 
-  ## Vocab
+  '''## Vocab
   # Get vocab file names first
   if hparams.vocab_prefix:
     src_vocab_file = hparams.vocab_prefix + "." + hparams.src
@@ -507,6 +507,11 @@ def extend_hparams(hparams):
   _add_argument(hparams, "tgt_vocab_size", tgt_vocab_size)
   _add_argument(hparams, "src_vocab_file", src_vocab_file)
   _add_argument(hparams, "tgt_vocab_file", tgt_vocab_file)
+  '''
+  _add_argument(hparams, "src_vocab_size", 50002)  #TODO: set vocab size by ../spm/vocab.en
+  _add_argument(hparams, "tgt_vocab_size", 23047)  #TODO: set vocab size by ../spm/vocab.zh
+  _add_argument(hparams, "src_vocab_file", None)
+  _add_argument(hparams, "tgt_vocab_file", None)
 
   # Num embedding partitions
   num_embeddings_partitions = getattr(hparams, "num_embeddings_partitions", 0)

@@ -253,21 +253,71 @@ if __name__ == '__main__':
         use_char_encode=False)
     g = tf.get_default_graph()
 
+    fsrc = open('../spm/train.en', 'w')
+    ftrg = open('../spm/train.zh', 'w')
+    fsvocab = open('../spm/vocab.en', 'w')
+    ftvocab = open('../spm/vocab.zh', 'w')
+    max_src_id, max_trg_id = 0, 0
+
     with tf.Session(graph=g) as sess:
 
         sess.run(iterator.initializer, feed_dict={src_file_placeholder: args.src_file,
                                                   tgt_file_placeholder: args.tgt_file})
-        for i in range(1):
-            print("======================")
+        for i in range(62734):
+            #print("======================")
             a, b, c = sess.run([iterator.target_input, iterator.target_output, iterator.source])
-            print_format = """
-            source: {source: s}
-            target_in: {target_in:s}
-            target_out: {target_out:s}
-            """
+            if i % 10000 == 0:
+                print(i)
+            if a is None or len(a) == 0:
+                break
+            
+            #print_format = """
+            #source: {source: s}
+            #target_in: {target_in:s}
+            #target_out: {target_out:s}"""
             for target_in, target_out, source in zip(a, b, c):
-                print(source)
-                print(src_decoder.DecodeIds(source.tolist()))
-                print(target_in)
-                print(tgt_decoder.DecodeIds(target_in.tolist()))
-                print(tgt_decoder.DecodeIds(target_out.tolist()))
+                # print(source)
+                # print(src_decoder.DecodeIds(source.tolist()))
+                # print(target_in)
+                # print(tgt_decoder.DecodeIds(target_in.tolist()))
+                # print(tgt_decoder.DecodeIds(target_out.tolist()))
+                slen = len(source)
+                tlen = len(target_in)
+                if slen == 0 or tlen == 0:
+                    continue
+                if source[0] == 1:
+                    sline = ''
+                else:
+                    sline = str(source[0])
+                for i in range(1, slen):
+                    if source[i] > max_src_id:
+                        max_src_id = source[i]
+                    if source[i] != 1 and source[i] != 2:
+                        sline += ' ' + str(source[i])
+                sline += '\n'
+                fsrc.write(sline)
+
+                if target_in[0] == 1:
+                    tline = ''
+                else:
+                    tline = str(target_in[0])
+                for i in range(1, tlen):
+                    if target_in[i] > max_trg_id:
+                        max_trg_id = target_in[i]
+                    if target_in[i] != 1 and target_in[i] != 2:
+                        tline += ' ' + str(target_in[i])
+                tline += '\n'
+                ftrg.write(tline)
+                #print(sline, tline)
+                #if i == 0:
+                #    print(sline, tline)
+    print('===>>>max', max_src_id, max_trg_id)
+    for i in range(max_src_id):
+        fsvocab.write(str(i) + '\n')
+    for i in range(max_trg_id):
+        ftvocab.write(str(i) + '\n')
+    fsrc.close()
+    ftrg.close()
+    fsvocab.close()
+    ftvocab.close()
+

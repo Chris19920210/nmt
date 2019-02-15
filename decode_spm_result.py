@@ -210,6 +210,39 @@ def get_serving_iterator(src_dataset,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='test')
+    parser.add_argument('--src-model', type=str, default=None,
+                        help='src decoder')
+    parser.add_argument('--tgt-model', type=str, default=None,
+                        help='src decoder')
+
+    import numpy as np
+    args = parser.parse_args()
+    src_decoder = sp()
+    src_decoder.Load(filename=args.src_model)
+    tgt_decoder = sp()
+    tgt_decoder.Load(filename=args.tgt_model)
+    finfer = open('../spm/infer.zh')
+    fsrc = open('../spm/test.en')
+    ftrg = open('../spm/test.zh')
+    for i in range(10):
+        linfer = finfer.readline().replace("\n", "").split(' ')
+        if '' in linfer: linfer.remove('')
+        lsrc = fsrc.readline().replace("\n", "").split(' ')
+        if '' in lsrc: lsrc.remove('')
+        ltrg = ftrg.readline().replace("\n", "").split(' ')
+        if '' in ltrg: ltrg.remove('')
+        print(linfer, lsrc, ltrg)
+        source = np.array(lsrc, dtype=np.int32)
+        target = np.array(ltrg, dtype=np.int32)
+        infer = np.array(linfer, dtype=np.int32)
+        print("============================")
+        print(src_decoder.DecodeIds(source.tolist()))
+        print(tgt_decoder.DecodeIds(target.tolist()))
+        print(tgt_decoder.DecodeIds(infer.tolist()))
+
+'''
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='test')
     parser.add_argument('--src-file', type=str, default=None,
                         help='src')
 
@@ -257,7 +290,7 @@ if __name__ == '__main__':
 
         sess.run(iterator.initializer, feed_dict={src_file_placeholder: args.src_file,
                                                   tgt_file_placeholder: args.tgt_file})
-        for i in range(1):
+        for i in range(10):
             print("======================")
             a, b, c = sess.run([iterator.target_input, iterator.target_output, iterator.source])
             print_format = """
@@ -271,3 +304,4 @@ if __name__ == '__main__':
                 print(target_in)
                 print(tgt_decoder.DecodeIds(target_in.tolist()))
                 print(tgt_decoder.DecodeIds(target_out.tolist()))
+'''

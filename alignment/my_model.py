@@ -21,6 +21,7 @@ from __future__ import print_function
 import abc
 import collections
 
+import numpy as np
 import tensorflow as tf
 
 from nmt import model_helper
@@ -47,7 +48,7 @@ class EvalOutputTuple(collections.namedtuple(
 
 
 class InferOutputTuple(collections.namedtuple(
-    "InferOutputTuple", ("align_score","src_seqlen","trg_seqlen"))):
+    "InferOutputTuple", ("align_score","sample_id","src_seqlen","trg_seqlen"))):
     """To allow for flexibily in returing different outputs."""
     pass
 
@@ -169,6 +170,7 @@ class BaseModel(object):
             self.eval_loss = res[1]
         elif self.mode == tf.contrib.learn.ModeKeys.INFER:
             self.final_context_state = res[2]
+            self.sample_id = res[3]
 
         if self.mode != tf.contrib.learn.ModeKeys.INFER:
             ## Count the number of predicted words for compute ppl.
@@ -525,7 +527,7 @@ class BaseModel(object):
 
     def infer(self, sess, feed_dict):
         assert self.mode == tf.contrib.learn.ModeKeys.INFER
-        output_tuple = InferOutputTuple(align_score=self.get_alignment_history(), src_seqlen=self.iterator.source_sequence_length, trg_seqlen=self.iterator.target_sequence_length)
+        output_tuple = InferOutputTuple(align_score=self.get_alignment_history(), sample_id=self.sample_id, src_seqlen=self.iterator.source_sequence_length, trg_seqlen=self.iterator.target_sequence_length)
         return sess.run(output_tuple, feed_dict=feed_dict)
 
     def decode(self, sess, feed_dict):
@@ -541,6 +543,8 @@ class BaseModel(object):
         output_tuple = self.infer(sess, feed_dict)
         attention_images = output_tuple.align_score
         attention_images = attention_images.transpose([1, 2, 0])
+        print("sample_id>>>>>>>>>>", output_tuple.sample_id)
+        np.save('../sample_id.npy', output_tuple.sample_id)
 
         return attention_images, output_tuple.src_seqlen, output_tuple.trg_seqlen
 
@@ -716,3 +720,4 @@ class Model(BaseModel):
         decoder_initial_state = encoder_state
 
         return cell, decoder_initial_state
+

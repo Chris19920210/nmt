@@ -11,6 +11,10 @@ parser.add_argument('--model1', type=str, required=True,
                     help='path to model1')
 parser.add_argument('--model2', type=str, required=True,
                     help='path to model2')
+parser.add_argument(
+            "--text", action="store_true",
+            help="whether text"
+        )
 args = parser.parse_args()
 
 
@@ -44,10 +48,17 @@ if __name__ == '__main__':
     lang1_text_conn = open(args.lang1, 'r')
     lang2_text_conn = open(args.lang2, 'r')
 
-    with tf.python_io.TFRecordWriter(args.lang1 + ".serialized") as lang1,\
-            tf.python_io.TFRecordWriter(args.lang2 + ".serialized") as lang2:
-        for src, tgt in zip(lang1_text_conn.readlines(), lang2_text_conn.readlines()):
-            lang1_ = _make_example(lang1_encoder.encode(src), "sources").SerializeToString()
-            lang2_ = _make_example(lang2_encoder.encode(tgt), "targets").SerializeToString()
-            lang1.write(lang1_)
-            lang2.write(lang2_)
+    if args.text:
+        with open(args.lang1 + ".text", 'w') as lang1, open(args.lang2 + ".text", 'w') as lang2:
+            for src, tgt in zip(lang1_text_conn.readlines(), lang2_text_conn.readlines()):
+                lang1.write(" ".join(map(str, lang1_encoder.encode(src))) + "\n")
+                lang2.write(" ".join(map(str, lang2_encoder.encode(tgt))) + "\n")
+
+    else:
+        with tf.python_io.TFRecordWriter(args.lang1 + ".serialized") as lang1,\
+                tf.python_io.TFRecordWriter(args.lang2 + ".serialized") as lang2:
+            for src, tgt in zip(lang1_text_conn.readlines(), lang2_text_conn.readlines()):
+                lang1_ = _make_example(lang1_encoder.encode(src), "sources").SerializeToString()
+                lang2_ = _make_example(lang2_encoder.encode(tgt), "targets").SerializeToString()
+                lang1.write(lang1_)
+                lang2.write(lang2_)

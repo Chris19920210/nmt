@@ -25,6 +25,7 @@ from nmt.utils import misc_utils
 from . import my_gnmt_model
 import json
 import argparse
+import pickle as pkl
 
 
 class Exporter(object):
@@ -87,12 +88,15 @@ class Exporter(object):
         return False
 
     def _create_infer_model(self):
-        if self.hparams.attention_architecture == "standard":
-            model_creator = my_attention_model.MyAttentionModel
-        elif self.hparams.attention_architecture in ["gnmt", "gnmt_v2"]:
+        if (hparams.encoder_type == "gnmt" or
+                hparams.attention_architecture in ["gnmt", "gnmt_v2"]):
             model_creator = my_gnmt_model.MyGNMTModel
+        elif hparams.attention_architecture == "standard":
+            model_creator = my_attention_model.MyAttentionModel
         else:
-            raise ValueError("Unknown model architecture")
+            raise ValueError("Unknown attention architecture %s" %
+                             hparams.attention_architecture)
+
         model = my_model_helper.create_serving_infer_model(model_creator=model_creator,
                                                            hparams=self.hparams, scope=None)
         return model
@@ -139,9 +143,7 @@ if __name__ == "__main__":
                         help='model dir (includes checkpoints and hparams file)')
     args = parser.parse_args()
 
-    hparams = tf.contrib.training.HParams()
-    for k, v in json.load(open(os.path.join(args.ckpt_path, 'hparams'), 'r')).items():
-        hparams.add_hparam(k, v)
+    hparams = pkl.load(open(os.path.join(args.ckpt_path, 'hparams.pkl'), 'rb'))
 
     exporter = Exporter(hparams=hparams, flags=args)
 

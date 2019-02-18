@@ -85,13 +85,16 @@ def get_alignment_from_scores(attention_images):
     if midx != -1:
       zhen_dic[i] = [k for k in range(midx, mlen + midx)]
   print('from zh to en: ', zhen_dic)
-  
+
+  alignments = []  
   # check out the alignment with bidirectional confirmation
   for ken in sorted(enzh_dic.keys()):
     zhs = enzh_dic[ken]
     for kzh in zhs:
       if kzh in zhen_dic and ken in zhen_dic[kzh]:
         print(ken, '-', kzh)
+        alignments.append([ken, kzh])
+  return alignments
 
 
 def decode_and_evaluate(name,
@@ -115,12 +118,15 @@ def decode_and_evaluate(name,
     start_time = time.time()
     num_sentences = 0
 
+    alignments = []
     attention_images, src_seqlen, trg_seqlen = model.decode(sess, feed_dict)
     print(attention_images.shape, attention_images, src_seqlen, trg_seqlen)
     for i in range(len(attention_images)):
         attention_image = attention_images[i, :src_seqlen[i], :trg_seqlen[i]]
         #print('-----', attention_image.shape, attention_image)
-        get_alignment_from_scores(attention_image)
+        alignment = get_alignment_from_scores(attention_image)
+        alignments.append(alignment)
+    return alignments
 
     '''while True:
       try:

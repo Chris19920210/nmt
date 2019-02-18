@@ -678,6 +678,8 @@ def run_main(flags, default_hparams, train_fn, inference_fn, target_session=""):
     ckpt = flags.ckpt
     if not ckpt:
       ckpt = tf.train.latest_checkpoint(out_dir)
+    import pickle
+    pickle.dump(hparams, open('./hparams.pkl', 'wb'))
     inference_fn(ckpt, flags.inference_input_file, flags.inference_tgt_file,
                  trans_file, hparams)
 

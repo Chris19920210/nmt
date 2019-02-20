@@ -112,7 +112,7 @@ class Exporter(object):
             # note here. Do not use decode func of model.
             sample_id, scores = infer_model.model.serving_infer()
             sample_id = tf.identity(sample_id, "translation")
-            scores = tf.identity(sample_id, "beam_score")
+            scores = tf.identity(scores, "beam_score")
 
             inference_signature = tf.saved_model.signature_def_utils.predict_signature_def(
                 inputs={
@@ -152,9 +152,16 @@ if __name__ == "__main__":
 
         hparams.add_hparam(k, v)
 
+    src_vocab_file = hparams.vocab_prefix + "." + hparams.src
+    tgt_vocab_file = hparams.vocab_prefix + "." + hparams.tgt
+
+    hparams.add_hparam('src_vocab_file', src_vocab_file)
+    hparams.add_hparam('tgt_vocab_file', tgt_vocab_file)
+
     hparams.set_hparam('infer_mode', 'beam_search')
     hparams.set_hparam('beam_width', args.beam_width)
     hparams.set_hparam('length_penalty_weight', args.length_penalty_weight)
+
 
     exporter = Exporter(hparams=hparams, flags=args)
 

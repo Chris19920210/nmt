@@ -712,18 +712,16 @@ class BaseModel(object):
     """
     sample_id = self.sample_id
     scores = self.infer_logits
-
-    # make sure outputs is of shape [batch_size, time] or [beam_width,
-    # batch_size, time] when using beam search.
     if self.time_major:
-      sample_id = tf.transpose(sample_id)
-      scores = tf.transpose(scores)
+        sample_id = tf.transpose(sample_id)
+        scores = tf.transpose(scores)
     elif sample_id.ndim == 3:
       # beam search output in [batch_size, time, beam_width] shape.
-      sample_id = sample_id[:, :, 0]
-      scores = scores[:, :, 0]
-    return sample_id, scores
-
+      sample_id = tf.transpose(sample_id, ([2, 0, 1]))
+      scores = tf.transpose(scores, ([2, 0, 1]))
+    # make sure outputs is of shape [batch_size, time] or [beam_width,
+    # batch_size, time] when using beam search.
+    return sample_id[0, :, :], scores[0, :, :]
 
   def build_encoder_states(self, include_embeddings=False):
     """Stack encoder states and return tensor [batch, length, layer, size]."""

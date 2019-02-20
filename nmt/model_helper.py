@@ -252,7 +252,15 @@ def create_serving_infer_model(model_creator, hparams, scope=None, extra_args=No
     """Create inference model."""
     graph = tf.Graph()
 
+    src_vocab_file = hparams.src_vocab_file
+    tgt_vocab_file = hparams.tgt_vocab_file
+
     with graph.as_default(), tf.container(scope or "infer"):
+
+        src_vocab_table, tgt_vocab_table = vocab_utils.create_vocab_tables(
+            src_vocab_file, tgt_vocab_file, hparams.share_vocab)
+        reverse_tgt_vocab_table = lookup_ops.index_to_string_table_from_file(
+            tgt_vocab_file, default_value=vocab_utils.UNK)
 
         src_placeholder = tf.placeholder(shape=[None], dtype=tf.string, name="src_placeholder")
 
@@ -265,8 +273,11 @@ def create_serving_infer_model(model_creator, hparams, scope=None, extra_args=No
 
         model = model_creator(
             hparams,
-            mode=tf.contrib.learn.ModeKeys.INFER,
             iterator=infer_batch,
+            mode=tf.contrib.learn.ModeKeys.INFER,
+            source_vocab_table=src_vocab_table,
+            target_vocab_table=tgt_vocab_table,
+            reverse_target_vocab_table=reverse_tgt_vocab_table,
             scope=scope,
             extra_args=extra_args)
 

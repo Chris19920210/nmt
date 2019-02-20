@@ -234,6 +234,50 @@ def create_infer_model(model_creator, hparams, scope=None, extra_args=None):
       iterator=iterator)
 
 
+def preprocess(src_placeholder,
+               batch_size,
+               hparams):
+
+    src_dataset = tf.data.Dataset.from_tensor_slices(src_placeholder)
+
+    infer_batch = iterator_utils.get_serving_infer_iterator(
+        src_dataset,
+        batch_size,
+        src_max_len=hparams.src_max_len_infer,
+        use_char_encode=hparams.use_char_encode)
+    return infer_batch
+
+
+def create_serving_infer_model(model_creator, hparams, scope=None, extra_args=None):
+    """Create inference model."""
+    graph = tf.Graph()
+
+    with graph.as_default(), tf.container(scope or "infer"):
+
+        src_placeholder = tf.placeholder(shape=[None], dtype=tf.string, name="src_placeholder")
+
+        batch_size = tf.shape(src_placeholder, out_type=tf.int64)[0]
+
+        infer_batch = preprocess(
+            src_placeholder,
+            batch_size,
+            hparams)
+
+        model = model_creator(
+            hparams,
+            mode=tf.contrib.learn.ModeKeys.INFER,
+            iterator=infer_batch,
+            scope=scope,
+            extra_args=extra_args)
+
+    return InferModel(
+        graph=graph,
+        model=model,
+        src_placeholder=src_placeholder,
+        batch_size_placeholder=batch_size,
+        iterator=infer_batch)
+
+
 def _get_embed_device(vocab_size):
   """Decide on which device to place an embed matrix given its vocab size."""
   if vocab_size > VOCAB_SIZE_THRESHOLD_CPU:

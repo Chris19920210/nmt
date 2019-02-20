@@ -584,6 +584,8 @@ class BaseModel(object):
 
         if infer_mode == "beam_search":
           sample_id = outputs.predicted_ids
+          ## tricky method
+          logits = outputs.beam_search_decoder_output.scores
         else:
           logits = outputs.rnn_output
           sample_id = outputs.sample_id
@@ -697,6 +699,31 @@ class BaseModel(object):
       # beam search output in [batch_size, time, beam_width] shape.
       sample_words = sample_words.transpose([2, 0, 1])
     return sample_words, infer_summary
+
+  def serving_infer(self):
+    """Decode a batch.
+
+    Args:
+      sess: tensorflow session to use.
+
+    Returns:
+      A tuple consiting of outputs, infer_summary.
+        outputs: of size [batch_size, time]
+    """
+    sample_id = self.sample_id
+    scores = self.infer_logits
+
+    # make sure outputs is of shape [batch_size, time] or [beam_width,
+    # batch_size, time] when using beam search.
+    if self.time_major:
+      sample_id = tf.transpose(sample_id)
+      scores = tf.transpose(scores)
+    elif sample_id.ndim == 3:
+      # beam search output in [batch_size, time, beam_width] shape.
+      sample_id = sample_id[:, :, 0]
+      scores = scores[:, :, 0]
+    return sample_id, scores
+
 
   def build_encoder_states(self, include_embeddings=False):
     """Stack encoder states and return tensor [batch, length, layer, size]."""

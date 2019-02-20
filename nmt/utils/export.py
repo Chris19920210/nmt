@@ -19,13 +19,12 @@ import time
 
 import tensorflow as tf
 
-from . import my_attention_model
-from . import my_model_helper
+from nmt import attention_model
+from nmt import model_helper
 from nmt.utils import misc_utils
-from . import my_gnmt_model
+from nmt import gnmt_model
 import json
 import argparse
-import pickle as pkl
 
 
 class Exporter(object):
@@ -90,15 +89,15 @@ class Exporter(object):
     def _create_infer_model(self):
         if (hparams.encoder_type == "gnmt" or
                 hparams.attention_architecture in ["gnmt", "gnmt_v2"]):
-            model_creator = my_gnmt_model.MyGNMTModel
+            model_creator = gnmt_model.GNMTModel
         elif hparams.attention_architecture == "standard":
-            model_creator = my_attention_model.MyAttentionModel
+            model_creator = attention_model.AttentionModel
         else:
             raise ValueError("Unknown attention architecture %s" %
                              hparams.attention_architecture)
 
-        model = my_model_helper.create_serving_infer_model(model_creator=model_creator,
-                                                           hparams=self.hparams, scope=None)
+        model = model_helper.create_serving_infer_model(model_creator=model_creator,
+                                                        hparams=self.hparams, scope=None)
         return model
 
     def export(self):
@@ -106,21 +105,22 @@ class Exporter(object):
         with tf.Session(graph=infer_model.graph,
                         config=tf.ConfigProto(allow_soft_placement=True, device_count={'GPU': 1})) as sess:
             inference_inputs = infer_model.graph.get_tensor_by_name('src_placeholder:0')
-            inference_targets = infer_model.graph.get_tensor_by_name('tgt_placeholder:0')
 
             saver = infer_model.model.saver
             saver.restore(sess, self._ckpt_path)
             sess.run(tf.tables_initializer())
             # note here. Do not use decode func of model.
-            attention_images = tf.transpose(infer_model.model.get_alignment_history(), [1, 2, 0], name="alignment")
+            sample_id, scores = infer_model.model.serving_infer()
+            sample_id = tf.identity(sample_id, "translation")
+            scores = tf.identity(sample_id, "beam_score")
 
             inference_signature = tf.saved_model.signature_def_utils.predict_signature_def(
                 inputs={
-                    'sources': inference_inputs,
-                    'targets': inference_targets,
+                    'input': inference_inputs,
                 },
                 outputs={
-                    'outputs': tf.convert_to_tensor(attention_images)
+                    'outputs': tf.convert_to_tensor(sample_id),
+                    'scores': tf.convert_to_tensor(scores)
                 }
             )
             legacy_ini_op = tf.group(tf.tables_initializer(), name='legacy_init_op')
@@ -141,11 +141,20 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='remover')
     parser.add_argument('--ckpt-path', type=str, default="./",
                         help='model dir (includes checkpoints and hparams file)')
+    parser.add_argument('--beam_width', type=int, default=5,
+                        help='beam size')
+    parser.add_argument('--length_penalty_weight', type=float, default=0.8,
+                        help="length_penalty")
     args = parser.parse_args()
 
     hparams = tf.contrib.training.HParams()
     for k, v in json.load(open(os.path.join(args.ckpt_path, 'hparams'), 'r')).items():
+
         hparams.add_hparam(k, v)
+
+    hparams.set_hparam('infer_mode', 'beam_search')
+    hparams.set_hparam('beam_width', args.beam_width)
+    hparams.set_hparam('length_penalty_weight', args.length_penalty_weight)
 
     exporter = Exporter(hparams=hparams, flags=args)
 

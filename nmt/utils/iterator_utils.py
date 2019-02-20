@@ -24,6 +24,9 @@ from ..utils import vocab_utils
 
 __all__ = ["BatchedInput", "get_iterator", "get_infer_iterator"]
 
+EOS_ID = 2
+SOS_ID = 1
+UNK = 0
 
 # NOTE(ebrevdo): When we subclass this, instances' __dict__ becomes empty.
 class BatchedInput(
@@ -32,6 +35,57 @@ class BatchedInput(
                             "target_output", "source_sequence_length",
                             "target_sequence_length"))):
   pass
+
+
+def get_serving_infer_iterator(src_dataset,
+                               batch_size,
+                               src_max_len=None,
+                               use_char_encode=False):
+    if use_char_encode:
+        src_eos_id = vocab_utils.EOS_CHAR_ID
+    else:
+        src_eos_id = tf.constant(EOS_ID, tf.int32)
+
+    src_dataset = src_dataset.map(
+        lambda src: decode_example(src, "sources"))
+
+    if src_max_len:
+        src_dataset = src_dataset.map(
+            lambda src: src[:src_max_len])
+
+    if use_char_encode:
+            # Convert the word strings to character ids
+        src_dataset = src_dataset.map(
+            lambda src: tf.reshape(vocab_utils.tokens_to_bytes(src), [-1]))
+    else:
+        src_dataset = src_dataset.map(lambda src: (src, tf.size(src)))
+
+    def batching_func(x):
+        return x.padded_batch(
+            batch_size,
+            # The entry is the source line rows;
+            # this has unknown-length vectors.  The last entry is
+            # the source row size; this is a scalar.
+            padded_shapes=(
+                tf.TensorShape([None]),  # src
+                tf.TensorShape([])),  # src_len
+            # Pad the source sequences with eos tokens.
+            # (Though notice we don't generally need to do this since
+            # later on we will be masking out calculations past the true sequence.
+            padding_values=(
+                src_eos_id,  # src
+                0))  # src_len -- unused
+
+    batched_dataset = batching_func(src_dataset)
+    (src_ids, src_seq_len) = tf.contrib.data.get_single_element(batched_dataset)
+
+    return BatchedInput(
+        initializer=None,
+        source=src_ids,
+        target_input=None,
+        target_output=None,
+        source_sequence_length=src_seq_len,
+        target_sequence_length=None)
 
 
 def get_infer_iterator(src_dataset,
@@ -246,3 +300,20 @@ def get_iterator(src_dataset,
       target_output=tgt_output_ids,
       source_sequence_length=src_seq_len,
       target_sequence_length=tgt_seq_len)
+
+
+def decode_example(serialized_example, field):
+    data_field = {
+        field: tf.VarLenFeature(tf.int64)
+    }
+
+    data_items_to_decoder = {
+        field: tf.contrib.slim.tfexample_decoder.Tensor(field)
+    }
+
+    decoder = tf.contrib.slim.tfexample_decoder.TFExampleDecoder(
+        data_field, data_items_to_decoder)
+
+    [decoded] = decoder.decode(serialized_example, items=[field])
+
+    return tf.to_int32(decoded)

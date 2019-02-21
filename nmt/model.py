@@ -457,10 +457,8 @@ class BaseModel(object):
       A tuple of final logits and final decoder state:
         logits: size [time, batch_size, vocab_size] when time_major=True.
     """
-    tgt_sos_id = tf.cast(self.tgt_vocab_table.lookup(tf.constant(hparams.sos)),
-                         tf.int32)
-    tgt_eos_id = tf.cast(self.tgt_vocab_table.lookup(tf.constant(hparams.eos)),
-                         tf.int32)
+    tgt_sos_id = tf.constant(1, dtype=tf.int32)
+    tgt_eos_id = tf.constant(2, dtype=tf.int32)
     iterator = self.iterator
 
     # maximum_iteration: The maximum decoding steps.
@@ -715,13 +713,18 @@ class BaseModel(object):
     if self.time_major:
         sample_id = tf.transpose(sample_id)
         scores = tf.transpose(scores)
-    elif sample_id.ndim == 3:
+    elif tf.keras.backend.ndim(sample_id) == 3:
       # beam search output in [batch_size, time, beam_width] shape.
       sample_id = tf.transpose(sample_id, ([2, 0, 1]))
       scores = tf.transpose(scores, ([2, 0, 1]))
     # make sure outputs is of shape [batch_size, time] or [beam_width,
     # batch_size, time] when using beam search.
-    return sample_id[0, :, :], scores[0, :, :]
+    if tf.keras.backend.ndim(sample_id) == 3:
+        sample_id = sample_id[0, :, :]
+        scores = scores[0, :, :]
+    else:
+        scores = sample_id
+    return sample_id, scores
 
   def build_encoder_states(self, include_embeddings=False):
     """Stack encoder states and return tensor [batch, length, layer, size]."""

@@ -25,7 +25,7 @@ from tensor2tensor.data_generators import text_encoder
 import tensorflow as tf
 from tensorflow_serving.apis import predict_pb2
 from tensorflow_serving.apis import prediction_service_pb2_grpc
-
+import abc
 
 def _make_example(ids,
                   feature_name="sources"):
@@ -111,3 +111,49 @@ def predict(src_list, tgt_list, request_fn, src_encoder, tgt_encoder):
     predictions = request_fn(src_examples, tgt_examples)
 
     return predictions
+
+
+def get_src_slice(src_align_ids, src_ids, align_matrix):
+    try:
+        start = src_ids.index(src_align_ids[0])
+        end = src_ids.index(src_align_ids[-1]) + 1
+    except Exception as e:
+        print(str(e))
+        start = 0
+        end = 0
+
+    return align_matrix[start: end, :]
+
+
+class WordSubstitution:
+    def __init__(self, src_encoder, tgt_encoder):
+        self.src_encoder = src_encoder
+        self.tgt_encoder = tgt_encoder
+
+    def get_word_src_slice(self, src_word, src_ids, align_matrix):
+        tgt_align_ids = self.src_encoder.encode(src_word)
+        return get_src_slice(tgt_align_ids, src_ids, align_matrix)
+
+    @abc.abstractmethod
+    def word_alignment(self, word_src_slice):
+        """
+        :param word_src_slice: the slice of align matrix which src words needs to be substituted
+        :return: corresponding start/end indices (a tuple)
+        """
+        return 0, 1
+
+    def _substitute(self, src_word, tgt_sub_word, src_ids, tgt_ids, align_matrix):
+        word_src_slice = self.get_word_src_slice(src_word, src_ids, align_matrix)
+        if word_src_slice.size == 0:
+            return self.tgt_encoder.decode(tgt_ids)
+        else:
+            start, end = self.word_alignment(word_src_slice)
+            tgt_slice_ids = tgt_ids[start: end]
+            tgt_word = self.tgt_encoder.decode(tgt_slice_ids)
+            tgt_sentence = self.tgt_encoder.decode(tgt_ids)
+            return tgt_sentence.replace(tgt_word, tgt_sub_word)
+
+    def substitute(self, src_words, tgt_sub_words, src_ids_list, tgt_ids_list, align_matrices):
+        return list(map(lambda args: self._substitute(
+            args[0], args[1], args[2], args[3], args[4]
+        ), zip(src_words, tgt_sub_words, src_ids_list, tgt_ids_list, align_matrices)))

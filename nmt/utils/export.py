@@ -143,7 +143,7 @@ if __name__ == "__main__":
                         help='model dir (includes checkpoints and hparams file)')
     parser.add_argument('--beam_width', type=int, default=5,
                         help='beam size')
-    parser.add_argument('--length_penalty_weight', type=float, default=0.8,
+    parser.add_argument('--length_penalty_weight', type=float, default=0.1,
                         help="length_penalty")
     args = parser.parse_args()
 

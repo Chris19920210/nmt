@@ -115,16 +115,19 @@ def predict(src_list, tgt_list, request_fn, src_encoder, tgt_encoder):
     return predictions
 
 
-def indices(mylist, value):
-    return [i for i, x in enumerate(mylist) if x == value]
+def find_sub_list(sl, l):
+    results = []
+    sll = len(sl)
+    for ind in (i for i, e in enumerate(l) if e == sl[0]):
+        if l[ind:ind+sll] == sl:
+            results.append((ind, ind+sll-1))
+    return results
 
 
 def get_src_slice(src_align_ids, src_ids, align_matrix):
-    start_list = indices(src_ids, src_align_ids[0])
-    end_list = indices(src_ids, src_align_ids[-1])
-    if len(start_list) != 0 and len(end_list) != 0:
-        ret = list(map(lambda args: align_matrix[args[0]: args[1] + 1, :],
-                           zip(start_list, end_list)))
+    start_end_list = find_sub_list(src_ids, src_align_ids[0])
+    if len(start_end_list) != 0:
+        ret = list(map(lambda args: align_matrix[args[0]: args[1] + 1, :], start_end_list))
     else:
         ret = list()
 

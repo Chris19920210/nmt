@@ -26,7 +26,6 @@ import tensorflow as tf
 from tensorflow_serving.apis import predict_pb2
 from tensorflow_serving.apis import prediction_service_pb2_grpc
 import abc
-import numpy as np
 
 
 def _make_example(ids,
@@ -125,7 +124,7 @@ def find_sub_list(sl, l):
 
 
 def get_src_slice(src_align_ids, src_ids, align_matrix):
-    start_end_list = find_sub_list(src_ids, src_align_ids[0])
+    start_end_list = find_sub_list(src_ids, src_align_ids)
     if len(start_end_list) != 0:
         ret = list(map(lambda args: align_matrix[args[0]: args[1] + 1, :], start_end_list))
     else:

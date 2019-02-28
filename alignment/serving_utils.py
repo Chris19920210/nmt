@@ -123,10 +123,10 @@ def get_src_slice(src_align_ids, src_ids, align_matrix):
     start_list = indices(src_ids, src_align_ids[0])
     end_list = indices(src_ids, src_align_ids[-1])
     if len(start_list) != 0 and len(end_list) != 0:
-        ret = np.array(map(lambda args: align_matrix[args[0]: args[1] + 1, :],
+        ret = list(map(lambda args: align_matrix[args[0]: args[1] + 1, :],
                            zip(start_list, end_list)))
     else:
-        ret = np.array([])
+        ret = list()
 
     return ret
 
@@ -156,7 +156,7 @@ class WordSubstitution:
 
     def _substitute(self, src_word, tgt_sub_word, src_ids, tgt_ids, align_matrix):
         word_src_slices = self.get_word_src_slice(src_word, src_ids, align_matrix)
-        if word_src_slices.size == 0:
+        if len(word_src_slices) == 0:
             return self.tgt_encoder.decode(tgt_ids)
         else:
             tgt_words = map(lambda word_src_slice:

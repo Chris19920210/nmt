@@ -70,7 +70,7 @@ if __name__ == '__main__':
     tgt_ids is a 1D list (result of tgt_encoder.encode)
     align_matrix is a 2D np.array with shape len(src_ids) by len(tgt_ids) + 1(eos token)
 
-    the corresponds batch is (dimension 0 is batch) 
+    the corresponding batch is (dimension 0 is batch) 
     src_ids_list is a 2D list
     tgt_ids_list is a 2D list
     align_matrices is a 3D np.array

@@ -79,8 +79,10 @@ if __name__ == '__main__':
 
     src sentence: 'Multifrequency electromagnetic method'
     src ids: [7045, 111, 12768, 12170, 769]
+    src_pieces: ['▁Mult', 'if', 'requency', '▁electromagnetic', '▁method']
     tgt sentence: 多频 电磁 法
     tgt ids: [77, 14668, 5801, 211]
+    tgt_pieces: ['▁多', '频', '▁电磁', '▁法']
 
 
 

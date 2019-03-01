@@ -84,7 +84,9 @@ if __name__ == '__main__':
 
 
 
-    substitute two sentences (src word: method, tgt_word: 法, sub1: demo1, sub2:demo2)
+    substitute two sentences (src word1: method,src word2: method, 
+    tgt_word1: 法, tgt_word2: 法 
+    sub1: demo1, sub2:demo2)
     """
 
     src_encoder = SpmTextEncoder("/home/chris/nmt/"

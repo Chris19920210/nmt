@@ -124,7 +124,7 @@ def find_sub_list(sl, l):
 
 
 def get_src_slice(src_align_ids, src_ids, align_matrix):
-    start_end_list = find_sub_list(src_ids, src_align_ids)
+    start_end_list = find_sub_list(src_align_ids, src_ids)
     if len(start_end_list) != 0:
         ret = list(map(lambda args: align_matrix[args[0]: args[1] + 1, :], start_end_list))
     else:
@@ -148,11 +148,11 @@ class WordSubstitution:
         :param word_src_slice: the slice of align matrix which src words needs to be substituted
         :return: corresponding start/end indices (a tuple)
         """
-        return 0, 1
+        return 3, 4
 
     def _substitute_per(self, tgt_ids, word_src_slice):
         start, end = self.word_alignment(word_src_slice)
-        tgt_slice_id = tgt_ids[start, end]
+        tgt_slice_id = tgt_ids[start: end]
         tgt_word = self.tgt_encoder.decode(tgt_slice_id)
         return tgt_word
 
@@ -172,3 +172,6 @@ class WordSubstitution:
         return list(map(lambda args: self._substitute(
             args[0], args[1], args[2], args[3], args[4]
         ), zip(src_words, tgt_sub_words, src_ids_list, tgt_ids_list, align_matrices)))
+
+
+

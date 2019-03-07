@@ -26,6 +26,12 @@ import tensorflow as tf
 from tensorflow_serving.apis import predict_pb2
 from tensorflow_serving.apis import prediction_service_pb2_grpc
 import abc
+from mosestokenizer import MosesTokenizer, MosesDetokenizer
+from tensor2tensor.utils import registry
+from tensor2tensor.utils import usr_dir
+import jieba
+from word_substitute import WordSubstitution
+import os
 
 
 def _make_example(ids,
@@ -67,6 +73,14 @@ def _decode(output_ids, output_decoder):
     return output_decoder.decode(output_ids, strip_extraneous=True)
 
 
+def make_request_fn(server, servable_name, timeout_secs):
+    request_fn = make_grpc_request_fn(
+        servable_name=servable_name,
+        server=server,
+        timeout_secs=timeout_secs)
+    return request_fn
+
+
 def make_grpc_request_fn(servable_name, server, timeout_secs):
     """Wraps function to make grpc requests with runtime args."""
     stub = _create_stub(server)
@@ -91,18 +105,10 @@ def make_grpc_request_fn(servable_name, server, timeout_secs):
     return _make_grpc_request
 
 
-def predict(src_list, tgt_list, request_fn, src_encoder, tgt_encoder):
+def predict(src_ids_list, tgt_ids_list, request_fn):
     """Encodes inputs, makes request to deployed TF model, and decodes outputs."""
-    assert isinstance(src_list, list)
-    assert isinstance(tgt_list, list)
-    src_ids_list = [
-        _encode(src, src_encoder, add_eos=False)
-        for src in src_list
-    ]
-    tgt_ids_list = [
-        _encode(tgt, tgt_encoder, add_eos=False)
-        for tgt in tgt_list
-    ]
+    assert isinstance(src_ids_list, list)
+    assert isinstance(tgt_ids_list, list)
     src_examples = [_make_example(src_ids, "sources")
                     for src_ids in src_ids_list]
 
@@ -112,3 +118,75 @@ def predict(src_list, tgt_list, request_fn, src_encoder, tgt_encoder):
     predictions = request_fn(src_examples, tgt_examples)
 
     return predictions
+
+
+class Client(object):
+    def __init__(self):
+        pass
+
+    @abc.abstractmethod
+    def query(self, msg):
+        """
+
+        :param msg: a dict
+        :return: a dict
+        """
+        pass
+
+
+class EnZhAlignClient(Client):
+    def __init__(self,
+                 t2t_usr_dir,
+                 problem,
+                 data_dir,
+                 user_dict,
+                 server,
+                 servable_name,
+                 timeout_secs
+                 ):
+        tf.logging.set_verbosity(tf.logging.INFO)
+        usr_dir.import_usr_dir(t2t_usr_dir)
+        self.problem = registry.problem(problem)
+        self.hparams = tf.contrib.training.HParams(
+            data_dir=os.path.expanduser(data_dir))
+        self.src_encoder = self.problem.feature_info["inputs"].encoder
+        self.tgt_encoder = self.problem.feature_info["targets"].encoder
+        self.en_tokenizer = MosesTokenizer('en')
+        self.zh_detokenizer = MosesDetokenizer("ko")
+        jieba.load_userdict(user_dict)
+        self.request_fn = make_request_fn(server, servable_name, timeout_secs)
+        self.word_substitute = WordSubstitution(src_encoder=self.src_encoder, tgt_encoder=self.tgt_encoder)
+        super(EnZhAlignClient, self).__init__()
+
+    def src_encode(self, s):
+        tokens = self.en_tokenizer(s)
+        return _encode(" ".join(tokens), self.src_encoder, add_eos=False)
+
+    def tgt_encode(self, s):
+        tokens = jieba.lcut(s)
+        return _encode(" ".join(tokens), self.tgt_encoder, add_eos=False)
+
+    def tgt_decode(self, s):
+        tokens = _decode(s, self.tgt_encoder)
+        return self.zh_detokenizer(tokens.split(" "))
+
+    def query(self, msg):
+        """
+
+        :param msg: msg
+        :return: msg
+        """
+        src_ids_list = list(map(lambda x: self.src_encode(x['origin']), msg["data"]))
+        tgt_ids_list = list(map(lambda x: self.tgt_encode(x['translate']), msg["data"]))
+        align_matrices = predict(src_ids_list, tgt_ids_list, self.request_fn)
+        for term in msg["terms"]:
+            tgt_ids_list = self.word_substitute.substitute(term["origin"],
+                                                           term['translate'],
+                                                           src_ids_list,
+                                                           tgt_ids_list,
+                                                           align_matrices)
+
+        for i, tgt_ids in enumerate(tgt_ids_list):
+            msg["data"][i]["translate"] = self.tgt_decode(tgt_ids)
+
+        return msg

@@ -131,24 +131,18 @@ class WordSubstitution:
                     if ca not in align:
                         align.append(ca)
         print(align)
-        start, end =  min(align), max(align) + 1
-        tgt_slice_id = tgt_ids[start: end]
-        tgt_word = self.tgt_encoder.decode(tgt_slice_id)
-        return tgt_word
+        start, end = min(align), max(align) + 1
+        return start, end
 
-    def _substitute(self, src_word, tgt_sub_word, src_ids, tgt_ids, align_matrix):
-        alignments = get_alignment_from_scores(align_matrix)
+    def _substitute(self, src_align_ids, tgt_sub_ids, src_ids, tgt_ids, align_matrix):
+        alignments = get_alignment_from_scores(align_matrix[:, :-1])
         print(alignments)
-        src_align_ids = self.src_encoder.encode(src_word)
         src_ranges = find_sub_list(src_align_ids, src_ids)
         #word_src_slices = self.get_word_src_slice(src_word, src_ids, align_matrix)
         #print('word_src_slices', word_src_slices, src_ids)
         if len(src_ranges) == 0:
             return self.tgt_encoder.decode(tgt_ids)
         else:
-            #tgt_words = map(lambda word_src_slice:
-            #                self._substitute_per(tgt_ids, word_src_slice), word_src_slices)
-            tgt_words = []
             for src_range in src_ranges:
                 all_miss = True  # check whether this word is aligned with targets
                 for i in range(src_range[0], src_range[1] + 1):
@@ -158,17 +152,16 @@ class WordSubstitution:
                 if all_miss:
                     continue
 
-                tgt_word = self._substitute_per(src_range, tgt_ids, alignments)
-                tgt_words.append(tgt_word)
-            tgt_sentence = self.tgt_encoder.decode(tgt_ids)
-            for tgt_word in tgt_words:
-                tgt_sentence = tgt_sentence.replace(tgt_word, tgt_sub_word)
-            return tgt_sentence
+                tgt_index = self._substitute_per(src_range, tgt_ids, alignments)
+                tgt_ids[tgt_index[0]: tgt_index[1]] = tgt_sub_ids
+            return tgt_ids
 
-    def substitute(self, src_words, tgt_sub_words, src_ids_list, tgt_ids_list, align_matrices):
+    def substitute(self, src_word, tgt_sub_word, src_ids_list, tgt_ids_list, align_matrices):
+        src_align_ids = self.src_encoder.encode(src_word)
+        tgt_sub_ids = self.tgt_encoder.encode(tgt_sub_word)
         return list(map(lambda args: self._substitute(
-            args[0], args[1], args[2], args[3], args[4]
-        ), zip(src_words, tgt_sub_words, src_ids_list, tgt_ids_list, align_matrices)))
+            src_align_ids, tgt_sub_ids, args[0], args[1], args[2]
+        ), zip(src_ids_list, tgt_ids_list, align_matrices)))
 
 
 if __name__ == '__main__':
@@ -199,9 +192,9 @@ if __name__ == '__main__':
     sub1: demo1, sub2:demo2)
     """
 
-    src_encoder = SpmTextEncoder("/home/chenrihan/nmt_datasets_spm/"
+    src_encoder = SpmTextEncoder("/home/chris/nmt/"
                                  "t2t_data_enzh_encoder/vocab.translatespm_enzh_ai50k.50000.subwords.en.model")
-    tgt_encoder = SpmTextEncoder("/home/chenrihan/nmt_datasets_spm/"
+    tgt_encoder = SpmTextEncoder("/home/chris/nmt/"
                                  "t2t_data_enzh_encoder/vocab.translatespm_enzh_ai50k.50000.subwords.zh.model")
 
     align_matrices = np.array([[[0.40774119, 0.00577477, 0.01190836, 0.0128996, 0.45733237],
@@ -216,12 +209,12 @@ if __name__ == '__main__':
                                 [0.01410285, 0.00107198, 0.10915253, 0.94760001, 0.23157741]]])
     ws = WordSubstitution(src_encoder, tgt_encoder)
 
-    src_words = ['method', 'method']
-    tgt_sub_words = ["demo", "demo2"]
+    src_word = 'method'
+    tgt_sub_word = "demo"
     src_ids_list = [[7045, 111, 12768, 12170, 769], [7045, 111, 12768, 12170, 769]]
     tgt_ids_list = [[77, 14668, 5801, 211], [77, 14668, 5801, 211]]
 
-    tgt_sentences = ws.substitute(src_words, tgt_sub_words, src_ids_list, tgt_ids_list, align_matrices)
+    tgt_sentences = ws.substitute(src_word, tgt_sub_word, src_ids_list, tgt_ids_list, align_matrices)
 
     for each in tgt_sentences:
-        print(each)
+        print(tgt_encoder.decode(each))

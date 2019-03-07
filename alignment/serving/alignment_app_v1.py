@@ -63,7 +63,7 @@ def handle_invalid_usage(error):
 def alignment():
     global align_client
     try:
-        data = json.loads(request.get_data(), strict=False)["data"]
+        data = json.loads(request.get_data(), strict=False)
         print(request.get_data())
         return json.dumps(align_client.query(data), indent=1, ensure_ascii=False)
     except Exception as e:

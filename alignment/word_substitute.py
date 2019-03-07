@@ -137,7 +137,7 @@ class WordSubstitution:
         return tgt_word
 
     def _substitute(self, src_word, tgt_sub_word, src_ids, tgt_ids, align_matrix):
-        alignments = get_alignment_from_scores(align_matrix)
+        alignments = get_alignment_from_scores(align_matrix[:, :-1])
         print(alignments)
         src_align_ids = self.src_encoder.encode(src_word)
         src_ranges = find_sub_list(src_align_ids, src_ids)
@@ -216,7 +216,7 @@ if __name__ == '__main__':
                                 [0.01410285, 0.00107198, 0.10915253, 0.94760001, 0.23157741]]])
     ws = WordSubstitution(src_encoder, tgt_encoder)
 
-    src_words = ['method', 'method']
+    src_words = ['Multifrequency', 'method']
     tgt_sub_words = ["demo", "demo2"]
     src_ids_list = [[7045, 111, 12768, 12170, 769], [7045, 111, 12768, 12170, 769]]
     tgt_ids_list = [[77, 14668, 5801, 211], [77, 14668, 5801, 211]]

@@ -7,8 +7,8 @@ def find_sub_list(sl, l):
     results = []
     sll = len(sl)
     for ind in (i for i, e in enumerate(l) if e == sl[0]):
-        if l[ind:ind+sll] == sl:
-            results.append((ind, ind+sll-1))
+        if l[ind:ind + sll] == sl:
+            results.append((ind, ind + sll - 1))
     return results
 
 
@@ -25,78 +25,76 @@ def get_src_slice(src_align_ids, src_ids, align_matrix):
 
 # --- for alignment by each 2D attention matrix
 def find_max_chain(arr, thres=0.25):
-  mlen, midx = 0, -1
-  j, k = 0, 0
-  while j < len(arr):
-    if arr[j] < thres:
-      j += 1
-      continue
-    k = j + 1
-    while k < len(arr):
-      if arr[k] < thres:
-        break
-      k += 1
-    clen = k - j
-    if clen > mlen:
-      mlen = clen
-      midx = j
-    elif clen == mlen and sum(arr[midx:midx+mlen]) < sum(arr[j:k]):
-      mlen = clen
-      midx = j
-    j = k + 1
-  return midx, mlen
+    mlen, midx = 0, -1
+    j, k = 0, 0
+    while j < len(arr):
+        if arr[j] < thres:
+            j += 1
+            continue
+        k = j + 1
+        while k < len(arr):
+            if arr[k] < thres:
+                break
+            k += 1
+        clen = k - j
+        if clen > mlen:
+            mlen = clen
+            midx = j
+        elif clen == mlen and sum(arr[midx:midx + mlen]) < sum(arr[j:k]):
+            mlen = clen
+            midx = j
+        j = k + 1
+    return midx, mlen
 
 
 def get_alignment_from_scores(attention_images):
-  le, lz = attention_images.shape
-  if le <= 1:
-    pass
-  if lz <= 1:
-    pass
-  # from en to zh
-  enzh_dic = {}
-  for i in range(le):
-    if len(np.where(attention_images[i, :]<0.1)[0]) == 0:
-      continue
-    cur_sorted = np.sort(attention_images[i, :])
-    # if there are a max value that is much larger than others
-    if cur_sorted[-1] / cur_sorted[-2] > 2:
-      enzh_dic[i] = [np.argmax(attention_images[i, :])]
-      continue
-    # one to many case
-    midx, mlen = find_max_chain(attention_images[i, :])
-    if midx != -1:
-      enzh_dic[i] = [k for k in range(midx, mlen + midx)]
-  #print('from en to zh: ', enzh_dic)
-  zhen_dic = {}
-  for i in range(lz):
-    if len(np.where(attention_images[:, i]<0.1)[0]) == 0:
-      continue
-    cur_sorted = np.sort(attention_images[:, i])
-    # if there are a max value that is much larger than others
-    if cur_sorted[-1] / cur_sorted[-2] > 2:
-      zhen_dic[i] = [np.argmax(attention_images[:, i])]
-      continue
-    # one to many case
-    midx, mlen = find_max_chain(attention_images[:, i])
-    if midx != -1:
-      zhen_dic[i] = [k for k in range(midx, mlen + midx)]
-  #print('from zh to en: ', zhen_dic)
+    le, lz = attention_images.shape
+    if le <= 1:
+        pass
+    if lz <= 1:
+        pass
+    # from en to zh
+    enzh_dic = {}
+    for i in range(le):
+        if len(np.where(attention_images[i, :] < 0.1)[0]) == 0:
+            continue
+        cur_sorted = np.sort(attention_images[i, :])
+        # if there are a max value that is much larger than others
+        if cur_sorted[-1] / cur_sorted[-2] > 2:
+            enzh_dic[i] = [np.argmax(attention_images[i, :])]
+            continue
+        # one to many case
+        midx, mlen = find_max_chain(attention_images[i, :])
+        if midx != -1:
+            enzh_dic[i] = [k for k in range(midx, mlen + midx)]
+    # print('from en to zh: ', enzh_dic)
+    zhen_dic = {}
+    for i in range(lz):
+        if len(np.where(attention_images[:, i] < 0.1)[0]) == 0:
+            continue
+        cur_sorted = np.sort(attention_images[:, i])
+        # if there are a max value that is much larger than others
+        if cur_sorted[-1] / cur_sorted[-2] > 2:
+            zhen_dic[i] = [np.argmax(attention_images[:, i])]
+            continue
+        # one to many case
+        midx, mlen = find_max_chain(attention_images[:, i])
+        if midx != -1:
+            zhen_dic[i] = [k for k in range(midx, mlen + midx)]
+    # print('from zh to en: ', zhen_dic)
 
-  alignments = {}
-  # check out the alignment with bidirectional confirmation
-  for ken in sorted(enzh_dic.keys()):
-    zhs = enzh_dic[ken]
-    for kzh in zhs:
-      if kzh in zhen_dic and ken in zhen_dic[kzh]:
-        #print(ken, '-', kzh)
-        #alignments[ken] = kzh
-        if ken not in alignments:
-            alignments[ken] = []
-        alignments[ken].append(kzh)
-  return alignments
-
-
+    alignments = {}
+    # check out the alignment with bidirectional confirmation
+    for ken in sorted(enzh_dic.keys()):
+        zhs = enzh_dic[ken]
+        for kzh in zhs:
+            if kzh in zhen_dic and ken in zhen_dic[kzh]:
+                # print(ken, '-', kzh)
+                # alignments[ken] = kzh
+                if ken not in alignments:
+                    alignments[ken] = []
+                alignments[ken].append(kzh)
+    return alignments
 
 
 class WordSubstitution:
@@ -115,14 +113,15 @@ class WordSubstitution:
         :param word_src_slice: the slice of align matrix which src words needs to be substituted
         :return: corresponding start/end indices (a tuple)
         """
-        return 3,4
+        return 3, 4
 
     '''def _substitute_per(self, tgt_ids, word_src_slice):
         start, end = self.word_alignment(word_src_slice)
         tgt_slice_id = tgt_ids[start: end]
         tgt_word = self.tgt_encoder.decode(tgt_slice_id)
         return tgt_word'''
-    def _substitute_per(self, src_range, tgt_ids, alignments):
+
+    def _substitute_per(self, src_range, alignments):
         align = []
         for i in range(src_range[0], src_range[1] + 1):
             if i in alignments:
@@ -138,10 +137,10 @@ class WordSubstitution:
         alignments = get_alignment_from_scores(align_matrix[:, :-1])
         print(alignments)
         src_ranges = find_sub_list(src_align_ids, src_ids)
-        #word_src_slices = self.get_word_src_slice(src_word, src_ids, align_matrix)
-        #print('word_src_slices', word_src_slices, src_ids)
+        # word_src_slices = self.get_word_src_slice(src_word, src_ids, align_matrix)
+        # print('word_src_slices', word_src_slices, src_ids)
         if len(src_ranges) == 0:
-            return self.tgt_encoder.decode(tgt_ids)
+            return tgt_ids
         else:
             for src_range in src_ranges:
                 all_miss = True  # check whether this word is aligned with targets
@@ -152,7 +151,7 @@ class WordSubstitution:
                 if all_miss:
                     continue
 
-                tgt_index = self._substitute_per(src_range, tgt_ids, alignments)
+                tgt_index = self._substitute_per(src_range, alignments)
                 tgt_ids[tgt_index[0]: tgt_index[1]] = tgt_sub_ids
             return tgt_ids
 
@@ -209,7 +208,7 @@ if __name__ == '__main__':
                                 [0.01410285, 0.00107198, 0.10915253, 0.94760001, 0.23157741]]])
     ws = WordSubstitution(src_encoder, tgt_encoder)
 
-    src_word = 'method'
+    src_word = 'Multifrequency'
     tgt_sub_word = "demo"
     src_ids_list = [[7045, 111, 12768, 12170, 769], [7045, 111, 12768, 12170, 769]]
     tgt_ids_list = [[77, 14668, 5801, 211], [77, 14668, 5801, 211]]

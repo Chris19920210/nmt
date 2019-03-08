@@ -9,7 +9,7 @@ import tensorflow as tf
 import simplejson as json
 import logging
 
-from serving_utils import EnZhAlignClient
+from .serving_utils import EnZhAlignClient
 
 
 flags = tf.flags
@@ -64,7 +64,6 @@ def alignment():
     global align_client
     try:
         data = json.loads(request.get_data(), strict=False)
-        print(request.get_data())
         return json.dumps(align_client.query(data), indent=1, ensure_ascii=False)
     except Exception as e:
         logging.error(str(e))
@@ -83,7 +82,7 @@ if __name__ == '__main__':
         FLAGS.user_dict,
         FLAGS.server,
         FLAGS.servable_name,
-        FLAGS.time_secs
+        FLAGS.timeout_secs
     )
 
     print("Starting app...")

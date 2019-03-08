@@ -25,12 +25,11 @@ from tensor2tensor.data_generators import text_encoder
 import tensorflow as tf
 from tensorflow_serving.apis import predict_pb2
 from tensorflow_serving.apis import prediction_service_pb2_grpc
-import abc
 from mosestokenizer import MosesTokenizer, MosesDetokenizer
 from tensor2tensor.utils import registry
 from tensor2tensor.utils import usr_dir
 import jieba
-from word_substitute import WordSubstitution
+from alignment.word_substitute import WordSubstitution
 import os
 
 
@@ -89,7 +88,7 @@ def make_grpc_request_fn(servable_name, server, timeout_secs):
         """Builds and sends request to TensorFlow model server."""
         request = predict_pb2.PredictRequest()
         request.model_spec.name = servable_name
-        assert len(src_examples) == tgt_examples
+        assert len(src_examples) == len(tgt_examples)
         request.inputs["sources"].CopyFrom(
             tf.contrib.util.make_tensor_proto(
                 [ex.SerializeToString() for ex in src_examples], shape=[len(src_examples)]))
@@ -120,21 +119,7 @@ def predict(src_ids_list, tgt_ids_list, request_fn):
     return predictions
 
 
-class Client(object):
-    def __init__(self):
-        pass
-
-    @abc.abstractmethod
-    def query(self, msg):
-        """
-
-        :param msg: a dict
-        :return: a dict
-        """
-        pass
-
-
-class EnZhAlignClient(Client):
+class EnZhAlignClient(object):
     def __init__(self,
                  t2t_usr_dir,
                  problem,
@@ -149,14 +134,24 @@ class EnZhAlignClient(Client):
         self.problem = registry.problem(problem)
         self.hparams = tf.contrib.training.HParams(
             data_dir=os.path.expanduser(data_dir))
-        self.src_encoder = self.problem.feature_info["inputs"].encoder
-        self.tgt_encoder = self.problem.feature_info["targets"].encoder
+        self.problem.get_hparams(self.hparams)
+        if problem.endswith("_rev"):
+            fname = "targets"
+        else:
+            fname = "inputs" if self.problem.has_inputs else "targets"
+        self.src_encoder = self.problem.feature_info[fname].encoder
+
+        if problem.endswith("_rev"):
+            self.tgt_encoder = self.problem.feature_info["inputs"].encoder
+        else:
+            self.tgt_encoder = self.problem.feature_info["targets"].encoder
+
         self.en_tokenizer = MosesTokenizer('en')
         self.zh_detokenizer = MosesDetokenizer("ko")
         jieba.load_userdict(user_dict)
         self.request_fn = make_request_fn(server, servable_name, timeout_secs)
+
         self.word_substitute = WordSubstitution(src_encoder=self.src_encoder, tgt_encoder=self.tgt_encoder)
-        super(EnZhAlignClient, self).__init__()
 
     def src_encode(self, s):
         tokens = self.en_tokenizer(s)

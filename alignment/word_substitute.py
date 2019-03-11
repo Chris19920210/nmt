@@ -53,34 +53,71 @@ def get_alignment_from_scores(attention_images):
     pass
   if lz <= 1:
     pass
+
+  # preprocess for attention image
+  enzh_att = np.copy(attention_images)
+  zhen_att = np.copy(attention_images.T)
+  enzh_att[np.where(enzh_att<0.1)] = 0
+  zhen_att[np.where(zhen_att<0.1)] = 0
+  enzh_sum = np.sum(enzh_att, axis=1)
+  zhen_sum = np.sum(zhen_att, axis=1)
+  enzh_att = np.array([tarr / tavg for tarr, tavg in zip(enzh_att, enzh_sum)])
+  zhen_att = np.array([tarr / tavg for tarr, tavg in zip(zhen_att, zhen_sum)])
+  print(enzh_att)
+  print(zhen_att)
+
   # from en to zh
   enzh_dic = {}
   for i in range(le):
-    if len(np.where(attention_images[i, :]<0.1)[0]) == 0:
+    tmp_arr = enzh_att[i]
+    if np.sum(tmp_arr) == 0: continue
+    cur_sorted = np.sort(tmp_arr)
+    # if there is a max value that is much larger than others
+    if cur_sorted[-1] - cur_sorted[-2] > 0.2 or cur_sorted[-1] / cur_sorted[-2] > 2:
+      enzh_dic[i] = [np.argmax(tmp_arr)]
       continue
-    cur_sorted = np.sort(attention_images[i, :])
-    # if there are a max value that is much larger than others
+    # one to many case
+    midx, mlen = find_max_chain(tmp_arr)
+    if midx != -1:
+      enzh_dic[i] = [k for k in range(midx, mlen + midx)]
+
+    '''if len(np.where(attention_images[i, :]<0.1)[0]) == 0:
+      continue
+    cur_sorted = np.sort(attention_images[:, i])
+    # if there is a max value that is much larger than others
     if cur_sorted[-1] / cur_sorted[-2] > 2:
       enzh_dic[i] = [np.argmax(attention_images[i, :])]
       continue
     # one to many case
     midx, mlen = find_max_chain(attention_images[i, :])
     if midx != -1:
-      enzh_dic[i] = [k for k in range(midx, mlen + midx)]
+      enzh_dic[i] = [k for k in range(midx, mlen + midx)]'''
   #print('from en to zh: ', enzh_dic)
   zhen_dic = {}
   for i in range(lz):
-    if len(np.where(attention_images[:, i]<0.1)[0]) == 0:
+    tmp_arr = zhen_att[i]
+    if np.sum(tmp_arr) == 0: continue
+    cur_sorted = np.sort(tmp_arr)
+    # if there is a max value that is much larger than others
+    if cur_sorted[-1] - cur_sorted[-2] > 0.2 or cur_sorted[-1] / cur_sorted[-2] > 2:
+      zhen_dic[i] = [np.argmax(tmp_arr)]
+      continue
+    # one to many case
+    midx, mlen = find_max_chain(tmp_arr)
+    if midx != -1:
+      zhen_dic[i] = [k for k in range(midx, mlen + midx)]
+
+    '''if len(np.where(attention_images[:, i]<0.1)[0]) == 0:
       continue
     cur_sorted = np.sort(attention_images[:, i])
-    # if there are a max value that is much larger than others
+    # if there is a max value that is much larger than others
     if cur_sorted[-1] / cur_sorted[-2] > 2:
       zhen_dic[i] = [np.argmax(attention_images[:, i])]
       continue
     # one to many case
     midx, mlen = find_max_chain(attention_images[:, i])
     if midx != -1:
-      zhen_dic[i] = [k for k in range(midx, mlen + midx)]
+      zhen_dic[i] = [k for k in range(midx, mlen + midx)]'''
   #print('from zh to en: ', zhen_dic)
 
   alignments = {}

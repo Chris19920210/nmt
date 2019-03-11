@@ -144,7 +144,6 @@ class WordSubstitution:
 
     @abc.abstractmethod
     def word_alignment(self, word_src_slice):
-        print(word_src_slice)
         """
         :param word_src_slice: the slice of align matrix which src words needs to be substituted
         :return: corresponding start/end indices (a tuple)
@@ -173,6 +172,7 @@ class WordSubstitution:
         alignments = get_alignment_from_scores(align_matrix[:, :-1])
         print(alignments)
         src_ranges = find_sub_list(src_align_ids, src_ids)
+        offset = 0
         # word_src_slices = self.get_word_src_slice(src_word, src_ids, align_matrix)
         # print('word_src_slices', word_src_slices, src_ids)
         if len(src_ranges) == 0:
@@ -188,12 +188,14 @@ class WordSubstitution:
                     continue
 
                 tgt_index = self._substitute_per(src_range, alignments)
-                tgt_ids[tgt_index[0]: tgt_index[1]] = tgt_sub_ids
+                tgt_ids[tgt_index[0] + offset: tgt_index[1] + offset] = tgt_sub_ids
+                offset += len(tgt_sub_ids) - tgt_index[1] + tgt_index[0]
             return tgt_ids
 
     def substitute(self, src_word, tgt_sub_word, src_ids_list, tgt_ids_list, align_matrices):
         src_align_ids = self.src_encoder.encode(src_word)
         tgt_sub_ids = self.tgt_encoder.encode(tgt_sub_word)
+
         return list(map(lambda args: self._substitute(
             src_align_ids, tgt_sub_ids, args[0], args[1], args[2]
         ), zip(src_ids_list, tgt_ids_list, align_matrices)))
@@ -210,7 +212,7 @@ if __name__ == '__main__':
     tgt_ids_list is a 2D list
     align_matrices is a 3D np.array
     Example:
-    src sentence: 'Multifrequency electromagnetic method'
+    src sentence: 'Multifrequency Multifrequency electromagnetic method'
     src ids: [7045, 111, 12768, 12170, 769]
     src_pieces: ['▁Mult', 'if', 'requency', '▁electromagnetic', '▁method']
     tgt sentence: 多频 电磁 法
@@ -226,21 +228,23 @@ if __name__ == '__main__':
     tgt_encoder = SpmTextEncoder("/home/chris/nmt/"
                                  "t2t_data_enzh_encoder/vocab.translatespm_enzh_ai50k.50000.subwords.zh.model")
 
-    align_matrices = np.array([[[0.40774119, 0.00577477, 0.01190836, 0.0128996, 0.45733237],
+    align_matrices = np.array([[
+                                [0.40774119, 0.00577477, 0.01190836, 0.0128996, 0.45733237],
                                 [0.16052449, 0.02375918, 0.00348592, 0.00184908, 0.09769257],
                                 [0.38648733, 0.95352787, 0.02377507, 0.01076588, 0.0883261],
                                 [0.03114409, 0.01586617, 0.85167813, 0.02688539, 0.1250716],
                                 [0.01410285, 0.00107198, 0.10915253, 0.94760001, 0.23157741]],
-                               [[0.40774119, 0.00577477, 0.01190836, 0.0128996, 0.45733237],
+                               [
+                                [0.40774119, 0.00577477, 0.01190836, 0.0128996, 0.45733237],
                                 [0.16052449, 0.02375918, 0.00348592, 0.00184908, 0.09769257],
                                 [0.38648733, 0.95352787, 0.02377507, 0.01076588, 0.0883261],
                                 [0.03114409, 0.01586617, 0.85167813, 0.02688539, 0.1250716],
                                 [0.01410285, 0.00107198, 0.10915253, 0.94760001, 0.23157741]]])
     ws = WordSubstitution(src_encoder, tgt_encoder)
 
-    src_word = 'electromagnetic'
+    src_word = 'Multifrequency'
     tgt_sub_word = "demo"
-    src_ids_list = [[7045, 111, 12768, 12170, 769], [7045, 111, 12768, 12170, 769]]
+    src_ids_list = [[7045, 111, 12768, 12170, 769], [7045, 111, 12768, 12768, 12170, 769]]
     tgt_ids_list = [[77, 14668, 5801, 211], [77, 14668, 5801, 211]]
 
     tgt_sentences = ws.substitute(src_word, tgt_sub_word, src_ids_list, tgt_ids_list, align_matrices)

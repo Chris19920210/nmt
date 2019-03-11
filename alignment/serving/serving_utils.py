@@ -29,7 +29,7 @@ from mosestokenizer import MosesTokenizer, MosesDetokenizer
 from tensor2tensor.utils import registry
 from tensor2tensor.utils import usr_dir
 import jieba
-from alignment.word_substitute import WordSubstitution, MOffset
+from alignment.word_substitute import WordSubstitution
 import os
 
 
@@ -174,7 +174,7 @@ class EnZhAlignClient(object):
         src_ids_list = list(map(lambda x: self.src_encode(x['origin']), msg["data"]))
         tgt_ids_list = list(map(lambda x: self.tgt_encode(x['translate']), msg["data"]))
         align_matrices = predict(src_ids_list, tgt_ids_list, self.request_fn)
-        offsets = [MOffset(0) for _ in range(len(src_ids_list))]
+        offsets = [[0] * len(x) for x in src_ids_list]
         for term in msg["terms"]:
             tgt_ids_list = self.word_substitute.substitute(term["origin"],
                                                            term['translate'],

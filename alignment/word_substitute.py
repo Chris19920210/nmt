@@ -133,18 +133,6 @@ def get_alignment_from_scores(attention_images):
     return alignments
 
 
-class MOffset:
-    def __init__(self, a):
-        self.a = a
-
-    def __iadd__(self, other):
-        self.a = self.a + other
-        return MOffset(self.a)
-
-    def get_offset(self):
-        return self.a
-
-
 class WordSubstitution:
     def __init__(self, src_encoder, tgt_encoder):
         self.src_encoder = src_encoder
@@ -181,6 +169,7 @@ class WordSubstitution:
         return start, end
 
     def _substitute(self, src_align_ids, tgt_sub_ids, src_ids, tgt_ids, align_matrix, offset):
+        print(offset)
         alignments = get_alignment_from_scores(align_matrix[:, :-1])
         print(alignments)
         src_ranges = find_sub_list(src_align_ids, src_ids)
@@ -199,8 +188,10 @@ class WordSubstitution:
                     continue
 
                 tgt_index = self._substitute_per(src_range, alignments)
-                tgt_ids[tgt_index[0] + offset.get_offset(): tgt_index[1] + offset.get_offset()] = tgt_sub_ids
-                offset += len(tgt_sub_ids) - tgt_index[1] + tgt_index[0]
+                tgt_ids[tgt_index[0] + offset[tgt_index[0]]: tgt_index[1] + offset[tgt_index[0]]] = tgt_sub_ids
+                for i in range(len(offset)):
+                    if i > tgt_index[0]:
+                        offset[i] += len(tgt_sub_ids) - tgt_index[1] + tgt_index[0]
             return tgt_ids
 
     def substitute(self, src_word, tgt_sub_word, src_ids_list, tgt_ids_list, align_matrices, offsets):
@@ -256,8 +247,9 @@ if __name__ == '__main__':
     tgt_sub_word = "demo"
     src_ids_list = [[7045, 111, 12768, 12170, 769], [7045, 111, 12768, 12768, 12170, 769]]
     tgt_ids_list = [[77, 14668, 5801, 211], [77, 14668, 5801, 211]]
+    offsets = [[0] * len(x) for x in src_ids_list]
 
-    tgt_sentences = ws.substitute(src_word, tgt_sub_word, src_ids_list, tgt_ids_list, align_matrices)
+    tgt_sentences = ws.substitute(src_word, tgt_sub_word, src_ids_list, tgt_ids_list, align_matrices, offsets)
 
     for each in tgt_sentences:
         print(tgt_encoder.decode(each))

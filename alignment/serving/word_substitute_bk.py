@@ -157,7 +157,7 @@ class WordSubstitution:
         tgt_word = self.tgt_encoder.decode(tgt_slice_id)
         return tgt_word'''
 
-    def _substitute_per(self, src_range, alignments):
+    def _substitute_per(self, src_range, tgt_ids, alignments):
         align = []
         for i in range(src_range[0], src_range[1] + 1):
             if i in alignments:
@@ -167,17 +167,23 @@ class WordSubstitution:
                         align.append(ca)
         print(align)
         start, end = min(align), max(align) + 1
-        return start, end
+        tgt_slice_id = tgt_ids[start: end]
+        tgt_word = self.tgt_encoder.decode(tgt_slice_id)
+        return tgt_word
 
-    def _substitute(self, src_align_ids, tgt_sub_ids, src_ids, tgt_ids, align_matrix):
+    def _substitute(self, src_word, tgt_sub_word, src_ids, tgt_ids, align_matrix):
         alignments = get_alignment_from_scores(align_matrix[:, :-1])
         print(alignments)
+        src_align_ids = self.src_encoder.encode(src_word)
         src_ranges = find_sub_list(src_align_ids, src_ids)
         # word_src_slices = self.get_word_src_slice(src_word, src_ids, align_matrix)
         # print('word_src_slices', word_src_slices, src_ids)
         if len(src_ranges) == 0:
-            return tgt_ids
+            return self.tgt_encoder.decode(tgt_ids)
         else:
+            # tgt_words = map(lambda word_src_slice:
+            #                self._substitute_per(tgt_ids, word_src_slice), word_src_slices)
+            tgt_words = []
             for src_range in src_ranges:
                 all_miss = True  # check whether this word is aligned with targets
                 for i in range(src_range[0], src_range[1] + 1):
@@ -187,16 +193,17 @@ class WordSubstitution:
                 if all_miss:
                     continue
 
-                tgt_index = self._substitute_per(src_range, alignments)
-                tgt_ids[tgt_index[0]: tgt_index[1]] = tgt_sub_ids
-            return tgt_ids
+                tgt_word = self._substitute_per(src_range, tgt_ids, alignments)
+                tgt_words.append(tgt_word)
+            tgt_sentence = self.tgt_encoder.decode(tgt_ids)
+            for tgt_word in tgt_words:
+                tgt_sentence = tgt_sentence.replace(tgt_word, tgt_sub_word)
+            return tgt_sentence
 
-    def substitute(self, src_word, tgt_sub_word, src_ids_list, tgt_ids_list, align_matrices):
-        src_align_ids = self.src_encoder.encode(src_word)
-        tgt_sub_ids = self.tgt_encoder.encode(tgt_sub_word)
+    def substitute(self, src_words, tgt_sub_words, src_ids_list, tgt_ids_list, align_matrices):
         return list(map(lambda args: self._substitute(
-            src_align_ids, tgt_sub_ids, args[0], args[1], args[2]
-        ), zip(src_ids_list, tgt_ids_list, align_matrices)))
+            args[0], args[1], args[2], args[3], args[4]
+        ), zip(src_words, tgt_sub_words, src_ids_list, tgt_ids_list, align_matrices)))
 
 
 if __name__ == '__main__':
@@ -237,13 +244,10 @@ if __name__ == '__main__':
                                 [0.03114409, 0.01586617, 0.85167813, 0.02688539, 0.1250716],
                                 [0.01410285, 0.00107198, 0.10915253, 0.94760001, 0.23157741]]])
     ws = WordSubstitution(src_encoder, tgt_encoder)
-
-    src_word = 'electromagnetic'
-    tgt_sub_word = "demo"
+    src_words = ['Multifrequency', 'method']
+    tgt_sub_words = ["demo", "demo2"]
     src_ids_list = [[7045, 111, 12768, 12170, 769], [7045, 111, 12768, 12170, 769]]
     tgt_ids_list = [[77, 14668, 5801, 211], [77, 14668, 5801, 211]]
-
-    tgt_sentences = ws.substitute(src_word, tgt_sub_word, src_ids_list, tgt_ids_list, align_matrices)
-
+    tgt_sentences = ws.substitute(src_words, tgt_sub_words, src_ids_list, tgt_ids_list, align_matrices)
     for each in tgt_sentences:
-        print(tgt_encoder.decode(each))
+        print(each)

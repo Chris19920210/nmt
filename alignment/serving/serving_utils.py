@@ -176,7 +176,8 @@ class EnZhAlignClient(object):
         align_matrices = predict(src_ids_list, tgt_ids_list, self.request_fn)
         offsets = [[0] * len(x) for x in src_ids_list]
         for term in msg["terms"]:
-            tgt_ids_list = self.word_substitute.substitute(term["origin"],
+            origins = self.en_tokenizer(term['origin'])
+            tgt_ids_list = self.word_substitute.substitute(origins,
                                                            term['translate'],
                                                            src_ids_list,
                                                            tgt_ids_list,

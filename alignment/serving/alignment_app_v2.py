@@ -59,7 +59,7 @@ class AsyncAppNmtHandler(MyAppBaseHandler):
         content_type = self.request.headers.get('Content-Type')
         if not (content_type and content_type.lower().startswith('application/json')):
             MyAppException(reason="Wrong data format, needs json", status_code=400)
-        logger.info(self.request.body)
+        logger.info(self.request.body.decode("utf-8"))
         res = yield gen.Task(align_tasks_enzh.alignment.apply_async, args=[self.request.body])
         ret = res.result
         self.write(ret)
@@ -72,7 +72,7 @@ class AsyncAppNmtHandler(MyAppBaseHandler):
         content_type = self.request.headers.get('Content-Type')
         if not (content_type and content_type.lower().startswith('application/json')):
             MyAppException(reason="Wrong data format, needs json", status_code=400)
-        logger.info(self.request.body)
+        logger.info(self.request.body.decode("utf-8"))
         res = yield gen.Task(align_tasks_enzh.alignment.apply_async, args=[self.request.body])
         ret = res.result
         self.write(ret)

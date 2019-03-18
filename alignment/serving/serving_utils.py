@@ -29,7 +29,7 @@ from mosestokenizer import MosesTokenizer, MosesDetokenizer
 from tensor2tensor.utils import registry
 from tensor2tensor.utils import usr_dir
 import jieba
-from alignment.word_substitute import WordSubstitution
+from word_substitute import WordSubstitution
 import os
 
 

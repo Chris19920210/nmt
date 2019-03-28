@@ -27,7 +27,7 @@ from nmt.utils import misc_utils as utils
 __all__ = ["decode_and_evaluate", "get_translation"]
 
 
-def find_max_chain(arr, thres=0.25):
+def find_max_chain(arr, thres=0.265):
   mlen, midx = 0, -1
   j, k = 0, 0
   while j < len(arr):
@@ -59,11 +59,11 @@ def get_alignment_from_scores(attention_images):
   # from en to zh
   enzh_dic = {}
   for i in range(le):
-    if len(np.where(attention_images[i, :]<0.1)[0]) == 0:
+    if len(np.where(attention_images[i, :]<0.08)[0]) == 0:
       continue
     cur_sorted = np.sort(attention_images[i, :])
     # if there are a max value that is much larger than others
-    if cur_sorted[-1] / cur_sorted[-2] > 2:
+    if cur_sorted[-1] / cur_sorted[-2] > 2.2:
       enzh_dic[i] = [np.argmax(attention_images[i, :])]
       continue
     # one to many case
@@ -73,11 +73,11 @@ def get_alignment_from_scores(attention_images):
   print('from en to zh: ', enzh_dic)
   zhen_dic = {}
   for i in range(lz):
-    if len(np.where(attention_images[:, i]<0.1)[0]) == 0:
+    if len(np.where(attention_images[:, i]<0.08)[0]) == 0:
       continue
     cur_sorted = np.sort(attention_images[:, i])
     # if there are a max value that is much larger than others
-    if cur_sorted[-1] / cur_sorted[-2] > 2:
+    if cur_sorted[-1] / cur_sorted[-2] > 2.2:
       zhen_dic[i] = [np.argmax(attention_images[:, i])]
       continue
     # one to many case

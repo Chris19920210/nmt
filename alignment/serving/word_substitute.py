@@ -1,7 +1,6 @@
 import abc
 from SpmTextEncoder import SpmTextEncoder
 import numpy as np
-from mosestokenizer import MosesTokenizer
 
 
 def find_sub_list(sl, l):
@@ -70,8 +69,7 @@ def get_alignment_from_scores(attention_images):
     enzh_dic = {}
     for i in range(le):
         tmp_arr = enzh_att[i]
-        if np.sum(tmp_arr) == 0:
-            continue
+        if np.sum(tmp_arr) == 0: continue
         cur_sorted = np.sort(tmp_arr)
         # if there is a max value that is much larger than others
         if cur_sorted[-1] - cur_sorted[-2] > 0.2 or cur_sorted[-1] / cur_sorted[-2] > 2:
@@ -97,8 +95,7 @@ def get_alignment_from_scores(attention_images):
     zhen_dic = {}
     for i in range(lz):
         tmp_arr = zhen_att[i]
-        if np.sum(tmp_arr) == 0:
-            continue
+        if np.sum(tmp_arr) == 0: continue
         cur_sorted = np.sort(tmp_arr)
         # if there is a max value that is much larger than others
         if cur_sorted[-1] - cur_sorted[-2] > 0.2 or cur_sorted[-1] / cur_sorted[-2] > 2:
@@ -144,6 +141,20 @@ class WordSubstitution:
     def get_word_src_slice(self, src_word, src_ids, align_matrix):
         src_align_ids = self.src_encoder.encode(src_word)
         return get_src_slice(src_align_ids, src_ids, align_matrix)
+
+    @abc.abstractmethod
+    def word_alignment(self, word_src_slice):
+        """
+        :param word_src_slice: the slice of align matrix which src words needs to be substituted
+        :return: corresponding start/end indices (a tuple)
+        """
+        return 3, 4
+
+    '''def _substitute_per(self, tgt_ids, word_src_slice):
+        start, end = self.word_alignment(word_src_slice)
+        tgt_slice_id = tgt_ids[start: end]
+        tgt_word = self.tgt_encoder.decode(tgt_slice_id)
+        return tgt_word'''
 
     def _substitute_per(self, src_range, alignments):
         align = []
@@ -235,15 +246,15 @@ if __name__ == '__main__':
             [0.03114409, 0.01586617, 0.85167813, 0.02688539, 0.1250716],
             [0.01410285, 0.00107198, 0.10915253, 0.94760001, 0.23157741]]])
     ws = WordSubstitution(src_encoder, tgt_encoder)
-    en_tokenizer = MosesTokenizer('en')
 
-    src_word = en_tokenizer('Multifrequency')
+    src_word = 'Multifrequency'
     tgt_sub_word = "demo"
     src_ids_list = [[7045, 111, 12768, 12170, 769], [7045, 111, 12768, 12768, 12170, 769]]
     tgt_ids_list = [[77, 14668, 5801, 211], [77, 14668, 5801, 211]]
     offsets = [[0] * len(x) for x in src_ids_list]
 
-    tgt_sentences = ws.substitute(src_word, tgt_sub_word, src_ids_list, tgt_ids_list, align_matrices, offsets)
+    tgt_sentences = ws.substitute([src_word], tgt_sub_word, src_ids_list, tgt_ids_list, align_matrices, offsets)
 
     for each in tgt_sentences:
         print(tgt_encoder.decode(each))
+

@@ -5,6 +5,8 @@ import numpy as np
 import json
 import logging
 import os
+import traceback
+
 """Celery asynchronous task"""
 
 
@@ -69,8 +71,8 @@ def alignment(self, msg):
                             ensure_ascii=False).replace("</", "<\\/")
         return target
 
-    except Exception as e:
-        self.retry(countdown=self.request.retries, exc=e)
+    except Exception:
+        return json.dumps({"error": traceback.format_exc()}, ensure_ascii=False)
 
 
 if __name__ == '__main__':

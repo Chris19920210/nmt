@@ -508,8 +508,8 @@ def extend_hparams(hparams):
   _add_argument(hparams, "src_vocab_file", src_vocab_file)
   _add_argument(hparams, "tgt_vocab_file", tgt_vocab_file)
   '''
-  _add_argument(hparams, "src_vocab_size", 50002)  #TODO: set vocab size by ../spm/vocab.en
-  _add_argument(hparams, "tgt_vocab_size", 23047)  #TODO: set vocab size by ../spm/vocab.zh
+  _add_argument(hparams, "src_vocab_size", 49999)  #TODO: set vocab size by ../spm/vocab.en
+  _add_argument(hparams, "tgt_vocab_size", 23044)  #TODO: set vocab size by ../spm/vocab.zh
   _add_argument(hparams, "src_vocab_file", None)
   _add_argument(hparams, "tgt_vocab_file", None)
 

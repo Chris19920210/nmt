@@ -219,6 +219,14 @@ if __name__ == '__main__':
                         help='src decoder')
     parser.add_argument('--tgt-model', type=str, default=None,
                         help='src decoder')
+    parser.add_argument('--mode', type=str, default='train',
+                        help='generate train/dev/test set')
+    parser.add_argument('--save-dir', type=str, default=None,
+                        help='dir to save')
+    parser.add_argument('--src-suffix', type=str, default='en',
+                        help='translation source suffix')
+    parser.add_argument('--tgt-suffix', type=str, default='zh',
+                        help='translation target suffix')
 
     src_file_placeholder = tf.placeholder(tf.string, shape=())
     tgt_file_placeholder = tf.placeholder(tf.string, shape=())
@@ -253,17 +261,20 @@ if __name__ == '__main__':
         use_char_encode=False)
     g = tf.get_default_graph()
 
-    fsrc = open('../spm/train.en', 'w')
-    ftrg = open('../spm/train.zh', 'w')
-    fsvocab = open('../spm/vocab.en', 'w')
-    ftvocab = open('../spm/vocab.zh', 'w')
+    save_dir = args.save_dir if args.save_dir[-1] != '/' else args.save_dir[:-1]
+    fsrc = open(save_dir + '/' + args.mode + '.' + args.src_suffix, 'w')
+    ftrg = open(save_dir + '/' + args.mode + '.' + args.tgt_suffix, 'w')
+    if args.mode == 'train':
+        fsvocab = open(save_dir + '/vocab.' + args.src_suffix, 'w')
+        ftvocab = open(save_dir + '/vocab.' + args.tgt_suffix, 'w')
     max_src_id, max_trg_id = 0, 0
 
     with tf.Session(graph=g) as sess:
 
         sess.run(iterator.initializer, feed_dict={src_file_placeholder: args.src_file,
                                                   tgt_file_placeholder: args.tgt_file})
-        for i in range(62734):
+        for i in range(2000000):
+            print(i)
             #print("======================")
             a, b, c = sess.run([iterator.target_input, iterator.target_output, iterator.source])
             if i % 10000 == 0:
@@ -277,10 +288,10 @@ if __name__ == '__main__':
             #target_out: {target_out:s}"""
             for target_in, target_out, source in zip(a, b, c):
                 # print(source)
-                # print(src_decoder.DecodeIds(source.tolist()))
+                print(src_decoder.DecodeIds(source.tolist()))
                 # print(target_in)
-                # print(tgt_decoder.DecodeIds(target_in.tolist()))
-                # print(tgt_decoder.DecodeIds(target_out.tolist()))
+                print(tgt_decoder.DecodeIds(target_in.tolist()))
+                print(tgt_decoder.DecodeIds(target_out.tolist()))
                 slen = len(source)
                 tlen = len(target_in)
                 if slen == 0 or tlen == 0:

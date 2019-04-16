@@ -143,25 +143,18 @@ if __name__ == "__main__":
                         help='model dir (includes checkpoints and hparams file)')
     parser.add_argument('--beam_width', type=int, default=5,
                         help='beam size')
-    parser.add_argument('--length_penalty_weight', type=float, default=0.8,
+    parser.add_argument('--length_penalty_weight', type=float, default=0.1,
                         help="length_penalty")
     args = parser.parse_args()
 
     hparams = tf.contrib.training.HParams()
     for k, v in json.load(open(os.path.join(args.ckpt_path, 'hparams'), 'r')).items():
-
         hparams.add_hparam(k, v)
 
-    src_vocab_file = hparams.vocab_prefix + "." + hparams.src
-    tgt_vocab_file = hparams.vocab_prefix + "." + hparams.tgt
-
-    hparams.add_hparam('src_vocab_file', src_vocab_file)
-    hparams.add_hparam('tgt_vocab_file', tgt_vocab_file)
-
-    hparams.set_hparam('infer_mode', 'beam_search')
-    hparams.set_hparam('beam_width', args.beam_width)
-    hparams.set_hparam('length_penalty_weight', args.length_penalty_weight)
-
+    if args.beam_width > 1:
+        hparams.set_hparam('infer_mode', 'beam_search')
+        hparams.set_hparam('beam_width', args.beam_width)
+        hparams.set_hparam('length_penalty_weight', args.length_penalty_weight)
 
     exporter = Exporter(hparams=hparams, flags=args)
 

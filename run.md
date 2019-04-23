@@ -22,3 +22,22 @@ to train zh->en
 `
 nohup /home/chenrihan/anaconda3/bin/python -m nmt.nmt --attention=normed_bahdanau --src=zh --tgt=en --vocab_prefix=/home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/spm_32k/vocab --train_prefix=/home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/spm_32k/train --dev_prefix=/home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/spm_32k/dev --test_prefix=/home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/spm_32k/dev --out_dir=/home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/zhen_normed_bahdanau_384_4 --num_train_steps=5000000 --steps_per_stats=100 --num_layers=4 --num_units=384 --dropout=0.2 > /home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/gnmt_zhen_384_4.log &
 `
+
+
+3. generate hparams.pkl for each model
+
+`
+/home/chenrihan/anaconda3/bin/python -m alignment.my_nmt --out_dir=/home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/enzh_normed_bahdanau_384_4/ --inference_input_file=/home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/spm_32k/dev.en --inference_output_file=infer.zh --hparams_pkl=/home/wudong/s2s/dipml/nmt/enzh_hparams.pkl
+`
+
+`
+/home/chenrihan/anaconda3/bin/python -m alignment.my_nmt --out_dir=/home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/zhen_normed_bahdanau_384_4/ --inference_input_file=/home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/spm_32k/dev.zh --inference_output_file=infer.en --hparams_pkl=/home/wudong/s2s/dipml/nmt/zhen_hparams.pkl
+`
+
+
+4. test
+modify __main__ part, the path of out_dir and hparams_pkl and run
+
+`
+python -m alignment.my_alignment
+`

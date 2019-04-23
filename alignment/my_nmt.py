@@ -265,6 +265,8 @@ def add_arguments(parser):
                       help="Checkpoint file to load a model for inference.")
   parser.add_argument("--inference_input_file", type=str, default=None,
                       help="Set to the source text to decode.")
+  parser.add_argument("--hparams_pkl", type=str, default=None,
+                      help="path to save hparams.")
   parser.add_argument("--inference_tgt_file", type=str, default=None,
                       help="Set to the target text to decode.")
   parser.add_argument("--inference_list", type=str, default=None,
@@ -508,8 +510,8 @@ def extend_hparams(hparams):
   _add_argument(hparams, "src_vocab_file", src_vocab_file)
   _add_argument(hparams, "tgt_vocab_file", tgt_vocab_file)
   '''
-  _add_argument(hparams, "src_vocab_size", 49999)  #TODO: set vocab size by ../spm/vocab.en
-  _add_argument(hparams, "tgt_vocab_size", 23044)  #TODO: set vocab size by ../spm/vocab.zh
+  _add_argument(hparams, "src_vocab_size", 32000)  #TODO: set vocab size by ../spm/vocab.en
+  _add_argument(hparams, "tgt_vocab_size", 32000)  #TODO: set vocab size by ../spm/vocab.zh
   _add_argument(hparams, "src_vocab_file", None)
   _add_argument(hparams, "tgt_vocab_file", None)
 
@@ -679,7 +681,7 @@ def run_main(flags, default_hparams, train_fn, inference_fn, target_session=""):
     if not ckpt:
       ckpt = tf.train.latest_checkpoint(out_dir)
     import pickle
-    pickle.dump(hparams, open('./hparams.pkl', 'wb'))
+    pickle.dump(hparams, open(flags.hparams_pkl, 'wb'))
     inference_fn(ckpt, flags.inference_input_file, flags.inference_tgt_file,
                  trans_file, hparams)
 

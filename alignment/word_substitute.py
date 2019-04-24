@@ -56,14 +56,13 @@ def get_alignment_from_scores(attention_images):
     # preprocess for attention image
     enzh_att = np.copy(attention_images)
     zhen_att = np.copy(attention_images.T)
-    enzh_att[np.where(enzh_att < 0.1)] = 0
-    zhen_att[np.where(zhen_att < 0.1)] = 0
+    thres = 0.5 / max(enzh_att.shape[-1], enzh_att.shape[-2])
+    enzh_att[np.where(enzh_att < thres)] = 0
+    zhen_att[np.where(zhen_att < thres)] = 0
     enzh_sum = np.sum(enzh_att, axis=1)
     zhen_sum = np.sum(zhen_att, axis=1)
-    enzh_att = np.array([tarr / tavg for tarr, tavg in zip(enzh_att, enzh_sum)])
-    zhen_att = np.array([tarr / tavg for tarr, tavg in zip(zhen_att, zhen_sum)])
-    print(enzh_att[:4, :4])
-    print(zhen_att[:4, :4])
+    enzh_att = np.array([tarr / tavg if tavg > 0 else tarr for tarr, tavg in zip(enzh_att, enzh_sum)])
+    zhen_att = np.array([tarr / tavg if tavg > 0 else tarr for tarr, tavg in zip(zhen_att, zhen_sum)])
 
     # from en to zh
     enzh_dic = {}
@@ -228,12 +227,26 @@ if __name__ == '__main__':
     sub1: demo1, sub2:demo2)
     """
 
-    src_encoder = SpmTextEncoder("/home/chenrihan/nmt_datasets_spm/"
-                                 "t2t_data_enzh_encoder/vocab.translatespm_enzh_ai50k.50000.subwords.en.model")
-    tgt_encoder = SpmTextEncoder("/home/chenrihan/nmt_datasets_spm/"
-                                 "t2t_data_enzh_encoder/vocab.translatespm_enzh_ai50k.50000.subwords.zh.model")
+    src_word = '促性腺激素'
+    tgt_sub_word = "demo"
+    align_matrices = np.load('/home/wudong/s2s/dipml/nmt/demo_npys/attention_images_1556028914.0537443.npy')[:, :, 1:]
+    en_zh = False
+    if en_zh:
+        src_encoder = SpmTextEncoder("/home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/"
+                                 "t2t_data_bpe_tok_enzh_same_all_32k/vocab.translatespm_enzh_ai32k.32000.subwords.en.model")
+        tgt_encoder = SpmTextEncoder("/home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/"
+                                 "t2t_data_bpe_tok_enzh_same_all_32k/vocab.translatespm_enzh_ai32k.32000.subwords.zh.model")
+        src_txt = 'Controlled ovulation induction is performed using gonadotrophin injections .'
+        tgt_txt = '通过 注射 促性腺激素 进行 控制性 排卵 。'
+    else:
+        tgt_encoder = SpmTextEncoder("/home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/"
+                                 "t2t_data_bpe_tok_enzh_same_all_32k/vocab.translatespm_enzh_ai32k.32000.subwords.en.model")
+        src_encoder = SpmTextEncoder("/home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/"
+                                 "t2t_data_bpe_tok_enzh_same_all_32k/vocab.translatespm_enzh_ai32k.32000.subwords.zh.model")
+        tgt_txt = 'Controlled ovulation induction is performed using gonadotrophin injections .'
+        src_txt = '通过 注射 促性腺激素 进行 控制性 排卵 。'
 
-    align_matrices = np.array([[
+    '''align_matrices = np.array([[
         [0.40774119, 0.00577477, 0.01190836, 0.0128996, 0.45733237],
         [0.16052449, 0.02375918, 0.00348592, 0.00184908, 0.09769257],
         [0.38648733, 0.95352787, 0.02377507, 0.01076588, 0.0883261],
@@ -244,13 +257,17 @@ if __name__ == '__main__':
             [0.16052449, 0.02375918, 0.00348592, 0.00184908, 0.09769257],
             [0.38648733, 0.95352787, 0.02377507, 0.01076588, 0.0883261],
             [0.03114409, 0.01586617, 0.85167813, 0.02688539, 0.1250716],
-            [0.01410285, 0.00107198, 0.10915253, 0.94760001, 0.23157741]]])
+            [0.01410285, 0.00107198, 0.10915253, 0.94760001, 0.23157741]]])'''
+    #align_matrices = np.load('/home/wudong/s2s/dipml/nmt/demo_npys/attention_images_1556028910.642994.npy') #1.
+    print(align_matrices.shape)
     ws = WordSubstitution(src_encoder, tgt_encoder)
 
-    src_word = 'Multifrequency'
-    tgt_sub_word = "demo"
-    src_ids_list = [[7045, 111, 12768, 12170, 769], [7045, 111, 12768, 12768, 12170, 769]]
-    tgt_ids_list = [[77, 14668, 5801, 211], [77, 14668, 5801, 211]]
+    #src_txt = 'Gross tubal disease destroys the cilia , so tubal function will not return even if patency is restored .'  #1.
+    #tgt_txt = '输卵管 纤毛 破坏 后 ， 输卵管 功能 很难 恢复 ， 即使 输卵管 被 疏通 后 。' #1.
+    print(src_encoder.encode(src_txt))
+    print(tgt_encoder.encode(tgt_txt))
+    src_ids_list = [src_encoder.encode(src_txt)]
+    tgt_ids_list = [tgt_encoder.encode(tgt_txt)]
     offsets = [[0] * len(x) for x in src_ids_list]
 
     tgt_sentences = ws.substitute([src_word], tgt_sub_word, src_ids_list, tgt_ids_list, align_matrices, offsets)

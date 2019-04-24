@@ -26,76 +26,114 @@ from nmt.utils import misc_utils as utils
 
 __all__ = ["decode_and_evaluate", "get_translation"]
 
-
-def find_max_chain(arr, thres=0.265):
-  mlen, midx = 0, -1
-  j, k = 0, 0
-  while j < len(arr):
-    if arr[j] < thres:
-      j += 1
-      continue
-    k = j + 1
-    while k < len(arr):
-      if arr[k] < thres:
-        break
-      k += 1
-    clen = k - j
-    if clen > mlen:
-      mlen = clen
-      midx = j
-    elif clen == mlen and sum(arr[midx:midx+mlen]) < sum(arr[j:k]):
-      mlen = clen
-      midx = j
-    j = k + 1
-  return midx, mlen
+# --- for alignment by each 2D attention matrix
+def find_max_chain(arr, thres=0.25):
+    mlen, midx = 0, -1
+    j, k = 0, 0
+    while j < len(arr):
+        if arr[j] < thres:
+            j += 1
+            continue
+        k = j + 1
+        while k < len(arr):
+            if arr[k] < thres:
+                break
+            k += 1
+        clen = k - j
+        if clen > mlen:
+            mlen = clen
+            midx = j
+        elif clen == mlen and sum(arr[midx:midx + mlen]) < sum(arr[j:k]):
+            mlen = clen
+            midx = j
+        j = k + 1
+    return midx, mlen
 
 
 def get_alignment_from_scores(attention_images):
-  le, lz = attention_images.shape
-  if le <= 1:
-    pass
-  if lz <= 1:
-    pass
-  # from en to zh
-  enzh_dic = {}
-  for i in range(le):
-    if len(np.where(attention_images[i, :]<0.08)[0]) == 0:
-      continue
-    cur_sorted = np.sort(attention_images[i, :])
-    # if there are a max value that is much larger than others
-    if cur_sorted[-1] / cur_sorted[-2] > 2.2:
-      enzh_dic[i] = [np.argmax(attention_images[i, :])]
-      continue
-    # one to many case
-    midx, mlen = find_max_chain(attention_images[i, :])
-    if midx != -1:
-      enzh_dic[i] = [k for k in range(midx, mlen + midx)]
-  print('from en to zh: ', enzh_dic)
-  zhen_dic = {}
-  for i in range(lz):
-    if len(np.where(attention_images[:, i]<0.08)[0]) == 0:
-      continue
-    cur_sorted = np.sort(attention_images[:, i])
-    # if there are a max value that is much larger than others
-    if cur_sorted[-1] / cur_sorted[-2] > 2.2:
-      zhen_dic[i] = [np.argmax(attention_images[:, i])]
-      continue
-    # one to many case
-    midx, mlen = find_max_chain(attention_images[:, i])
-    if midx != -1:
-      zhen_dic[i] = [k for k in range(midx, mlen + midx)]
-  print('from zh to en: ', zhen_dic)
+    le, lz = attention_images.shape
+    if le <= 1:
+        pass
+    if lz <= 1:
+        pass
 
-  alignments = []  
-  # check out the alignment with bidirectional confirmation
-  for ken in sorted(enzh_dic.keys()):
-    zhs = enzh_dic[ken]
-    for kzh in zhs:
-      if kzh in zhen_dic and ken in zhen_dic[kzh]:
-        print(ken, '-', kzh)
-        alignments.append([ken, kzh])
-  return alignments
+    # preprocess for attention image
+    enzh_att = np.copy(attention_images)
+    zhen_att = np.copy(attention_images.T)
+    thres = 0.5 / max(enzh_att.shape[-1], enzh_att.shape[-2])
+    enzh_att[np.where(enzh_att < thres)] = 0
+    zhen_att[np.where(zhen_att < thres)] = 0
+    enzh_sum = np.sum(enzh_att, axis=1)
+    zhen_sum = np.sum(zhen_att, axis=1)
+    enzh_att = np.array([tarr / tavg if tavg > 0 else tarr for tarr, tavg in zip(enzh_att, enzh_sum)])
+    zhen_att = np.array([tarr / tavg if tavg > 0 else tarr for tarr, tavg in zip(zhen_att, zhen_sum)])
 
+    # from en to zh
+    enzh_dic = {}
+    for i in range(le):
+        tmp_arr = enzh_att[i]
+        if np.sum(tmp_arr) == 0: continue
+        cur_sorted = np.sort(tmp_arr)
+        # if there is a max value that is much larger than others
+        if cur_sorted[-1] - cur_sorted[-2] > 0.2 or cur_sorted[-1] / cur_sorted[-2] > 2:
+            enzh_dic[i] = [np.argmax(tmp_arr)]
+            continue
+        # one to many case
+        midx, mlen = find_max_chain(tmp_arr)
+        if midx != -1:
+            enzh_dic[i] = [k for k in range(midx, mlen + midx)]
+
+        '''if len(np.where(attention_images[i, :]<0.1)[0]) == 0:
+          continue
+        cur_sorted = np.sort(attention_images[:, i])
+        # if there is a max value that is much larger than others
+        if cur_sorted[-1] / cur_sorted[-2] > 2:
+          enzh_dic[i] = [np.argmax(attention_images[i, :])]
+          continue
+        # one to many case
+        midx, mlen = find_max_chain(attention_images[i, :])
+        if midx != -1:
+          enzh_dic[i] = [k for k in range(midx, mlen + midx)]'''
+    # print('from en to zh: ', enzh_dic)
+    zhen_dic = {}
+    for i in range(lz):
+        tmp_arr = zhen_att[i]
+        if np.sum(tmp_arr) == 0: continue
+        cur_sorted = np.sort(tmp_arr)
+        # if there is a max value that is much larger than others
+        if cur_sorted[-1] - cur_sorted[-2] > 0.2 or cur_sorted[-1] / cur_sorted[-2] > 2:
+            zhen_dic[i] = [np.argmax(tmp_arr)]
+            continue
+        # one to many case
+        midx, mlen = find_max_chain(tmp_arr)
+        if midx != -1:
+            zhen_dic[i] = [k for k in range(midx, mlen + midx)]
+
+        '''if len(np.where(attention_images[:, i]<0.1)[0]) == 0:
+          continue
+        cur_sorted = np.sort(attention_images[:, i])
+        # if there is a max value that is much larger than others
+        if cur_sorted[-1] / cur_sorted[-2] > 2:
+          zhen_dic[i] = [np.argmax(attention_images[:, i])]
+          continue
+        # one to many case
+        midx, mlen = find_max_chain(attention_images[:, i])
+        if midx != -1:
+          zhen_dic[i] = [k for k in range(midx, mlen + midx)]'''
+    # print('from zh to en: ', zhen_dic)
+
+    alignments = {}
+    # check out the alignment with bidirectional confirmation
+    for ken in sorted(enzh_dic.keys()):
+        zhs = enzh_dic[ken]
+        for kzh in zhs:
+            if kzh in zhen_dic and ken in zhen_dic[kzh]:
+                # print(ken, '-', kzh)
+                # alignments[ken] = kzh
+                if ken not in alignments:
+                    alignments[ken] = []
+                alignments[ken].append(kzh)
+    return alignments
 
 def decode_and_evaluate(name,
                         model,
@@ -120,7 +158,9 @@ def decode_and_evaluate(name,
 
     alignments = []
     attention_images, src_seqlen, trg_seqlen = model.decode(sess, feed_dict)
-    print(attention_images.shape, attention_images, src_seqlen, trg_seqlen)
+    demo_npy = 'demo_npys/attention_images_' + str(time.time()) + '.npy'
+    print('demo_npy:', demo_npy)
+    np.save(demo_npy, attention_images)
     for i in range(len(attention_images)):
         attention_image = attention_images[i, :src_seqlen[i], :trg_seqlen[i]]
         #print('-----', attention_image.shape, attention_image)

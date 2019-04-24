@@ -543,8 +543,6 @@ class BaseModel(object):
         output_tuple = self.infer(sess, feed_dict)
         attention_images = output_tuple.align_score
         attention_images = attention_images.transpose([1, 2, 0])
-        print("sample_id>>>>>>>>>>", output_tuple.sample_id)
-        np.save('../sample_id.npy', output_tuple.sample_id)
 
         return attention_images, output_tuple.src_seqlen, output_tuple.trg_seqlen
 

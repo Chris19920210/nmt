@@ -72,7 +72,11 @@ def get_alignment_from_scores(attention_images):
         if np.sum(tmp_arr) == 0: continue
         cur_sorted = np.sort(tmp_arr)
         # if there is a max value that is much larger than others
-        if cur_sorted[-1] - cur_sorted[-2] > 0.2 or cur_sorted[-1] / cur_sorted[-2] > 2:
+        if len(cur_sorted) == 0:
+            continue
+        elif len(cur_sorted) == 1:
+            enzh_dic[i] = 0
+        elif cur_sorted[-1] - cur_sorted[-2] > 0.2 or cur_sorted[-1] / cur_sorted[-2] > 2:
             enzh_dic[i] = [np.argmax(tmp_arr)]
             continue
         # one to many case

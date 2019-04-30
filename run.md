@@ -41,3 +41,15 @@ modify __main__ part, the path of out_dir and hparams_pkl and run
 `
 python -m alignment.my_alignment
 `
+
+5. export model
+
+`
+CUDA_VISIBLE_DEVICES=1 python -m alignment.export --ckpt-path /home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/enzh_normed_bahdanau_384_4_2/
+`
+
+6. optimize model
+
+`
+CUDA_VISIBLE_DEVICES=1 python -m alignment.model_optimize --export-dir ./ --saved-model /home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/enzh_normed_bahdanau_384_4_2/export/1556605311/
+`

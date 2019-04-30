@@ -14,7 +14,7 @@ def find_sub_list(sl, l):
 
 def get_src_slice(src_align_ids, src_ids, align_matrix):
     start_end_list = find_sub_list(src_align_ids, src_ids)
-    print('start end list', start_end_list)
+    #print('start end list', start_end_list)
     if len(start_end_list) != 0:
         ret = list(map(lambda args: align_matrix[args[0]: args[1] + 1, :], start_end_list))
     else:
@@ -60,10 +60,10 @@ def get_alignment_from_scores(attention_images):
     zhen_att[np.where(zhen_att < 0.1)] = 0
     enzh_sum = np.sum(enzh_att, axis=1)
     zhen_sum = np.sum(zhen_att, axis=1)
-    enzh_att = np.array([tarr / tavg for tarr, tavg in zip(enzh_att, enzh_sum)])
-    zhen_att = np.array([tarr / tavg for tarr, tavg in zip(zhen_att, zhen_sum)])
-    print(enzh_att[:4, :4])
-    print(zhen_att[:4, :4])
+    enzh_att = np.array([tarr / tavg if np.sum(tavg) > 0 else 0 for tarr, tavg in zip(enzh_att, enzh_sum)])
+    zhen_att = np.array([tarr / tavg if np.sum(tavg) > 0 else 0 for tarr, tavg in zip(zhen_att, zhen_sum)])
+    #print(enzh_att[:4, :4])
+    #print(zhen_att[:4, :4])
 
     # from en to zh
     enzh_dic = {}
@@ -168,14 +168,14 @@ class WordSubstitution:
                 for ca in cur_align:
                     if ca not in align:
                         align.append(ca)
-        print(align)
+        #print(align)
         start, end = min(align), max(align) + 1
         return start, end
 
     def _substitute(self, src_align_ids, tgt_sub_ids, src_ids, tgt_ids, align_matrix, offset):
-        print(offset)
+        #print(offset)
         alignments = get_alignment_from_scores(align_matrix[:, :-1])
-        print(alignments)
+        #print(alignments)
         src_ranges = find_sub_list(src_align_ids, src_ids)
         # word_src_slices = self.get_word_src_slice(src_word, src_ids, align_matrix)
         # print('word_src_slices', word_src_slices, src_ids)
@@ -204,7 +204,7 @@ class WordSubstitution:
         for src_word in src_words:
             src_align_ids += self.src_encoder.encode(src_word)
         tgt_sub_ids = self.tgt_encoder.encode(tgt_word)
-        print(src_align_ids)
+        #print(src_align_ids)
         return list(map(lambda args: self._substitute(
             src_align_ids, tgt_sub_ids, args[0], args[1], args[2],
             args[3]), zip(src_ids_list, tgt_ids_list, align_matrices, offsets)))

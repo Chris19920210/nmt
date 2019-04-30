@@ -1,4 +1,5 @@
 1. generate text files of token ids
+
 `
 python generate_spm_corpus_from_data_dir.py --tgt-model=/home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/t2t_data_bpe_tok_enzh_same_all_32k/vocab.translatespm_enzh_ai32k.32000.subwords.zh.model --src-model=/home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/t2t_data_bpe_tok_enzh_same_all_32k/vocab.translatespm_enzh_ai32k.32000.subwords.en.model --src-file=/home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/nmt_datasets_final/wmt_enzh_32000k_tok_train.lang1 --tgt-file=/home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/nmt_datasets_final/wmt_enzh_32000k_tok_train.lang2 --direction=enzh --save-dir=/home/wudong/s2s/dipml/gnmt_enzh_32k_alignment/spm_32k --mode=train
 `
